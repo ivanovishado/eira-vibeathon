@@ -56,6 +56,7 @@ describe('de la lectura al formulario', () => {
     expect(valores).toEqual({
       motivo: 'Tamizaje',
       'signosVitales.pesoKg': '68.5',
+      diagnostico: '',
     })
     expect(marcas).toEqual({
       'signosVitales.pesoKg': 'dudoso',

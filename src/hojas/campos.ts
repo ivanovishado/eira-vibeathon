@@ -51,12 +51,13 @@ function porPrefijo<K extends string>(
       valores[id.slice(prefijo.length) as K] = valor.trim()
   for (const id of lectura.dudosos)
     if (id.startsWith(prefijo)) marcas[id.slice(prefijo.length) as K] = 'dudoso'
-  // Lo ilegible nunca lleva valor, aunque viniera alguno.
+  // Lo ilegible queda vacío, aunque viniera algo o el formulario tenga un valor por
+  // omisión (fecha de hoy, médico recordado).
   for (const id of lectura.ilegibles)
     if (id.startsWith(prefijo)) {
       const campo = id.slice(prefijo.length) as K
       marcas[campo] = 'ilegible'
-      delete valores[campo]
+      valores[campo] = ''
     }
   return { valores, marcas }
 }
