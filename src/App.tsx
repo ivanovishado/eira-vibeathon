@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Ajustes } from './pages/Ajustes'
 import { BuscarPaciente } from './pages/BuscarPaciente'
+import { Cuenta } from './pages/Cuenta'
 import { Expediente } from './pages/Expediente'
 import { NuevaConsulta } from './pages/NuevaConsulta'
 import { NuevaPaciente } from './pages/NuevaPaciente'
@@ -19,6 +20,7 @@ export default function App() {
             element={<NuevaConsulta />}
           />
           <Route path="ajustes" element={<Ajustes />} />
+          <Route path="cuenta" element={<Cuenta />} />
         </Route>
       </Routes>
     </BrowserRouter>

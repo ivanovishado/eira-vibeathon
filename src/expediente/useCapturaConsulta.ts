@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { medicoDeCuenta } from '../cuenta/cuenta'
 import { db, type Consulta, type Paciente } from '../db/schema'
 import {
   claveBorrador,
@@ -71,7 +72,7 @@ export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
                 .equals(original.id)
                 .toArray(),
             )
-          : capturaVacia(await leerRecordados()))
+          : capturaVacia({ ...(await leerRecordados()), ...medicoDeCuenta() }))
       if (!vigente) return
       actual.current = inicial
       setCaptura(inicial)
