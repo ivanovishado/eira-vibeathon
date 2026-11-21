@@ -1,14 +1,15 @@
-// Lee una hoja de consulta en papel con Gemini. Exige sesión válida, toma la foto del
-// bucket privado `hojas` y devuelve los campos leídos y la lista de campos dudosos.
-// Secretos: GEMINI_API_KEY (obligatorio) y GEMINI_MODEL (opcional).
+// Lee una hoja de consulta en papel. Exige sesión válida, toma la foto del bucket
+// privado `hojas` y devuelve los campos leídos y la lista de campos dudosos.
+// Secretos: LECTOR_HOJAS (`ocrspace` por omisión o `gemini`), OCR_SPACE_API_KEY
+// (con ocrspace) y OCR_SPACE_ENGINE (opcional, 3); GEMINI_API_KEY (con gemini) y
+// GEMINI_MODEL (opcional).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
   ErrorLectura,
-  leerHojaConGemini,
-  LIMITE_GEMINI_MS,
-  MODELO_POR_DEFECTO,
+  LIMITE_LECTOR_MS,
   validarCampos,
 } from '../_shared/lecturaHoja.ts'
+import { elegirLector, leerHoja } from '../_shared/lectores.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -44,17 +45,9 @@ Deno.serve(async (req) => {
   if (errorSesion || !usuario.user)
     return responder({ error: 'La sesión no es válida.', tipo: 'sesion' }, 401)
 
-  const apiKey = Deno.env.get('GEMINI_API_KEY')
-  if (!apiKey)
-    return responder(
-      {
-        error: 'Falta configurar GEMINI_API_KEY en el servidor.',
-        tipo: 'config',
-      },
-      500,
-    )
-
+  const entorno = (nombre: string) => Deno.env.get(nombre)
   try {
+    const lector = elegirLector(entorno)
     const cuerpo = (await req.json().catch(() => ({}))) as {
       ruta?: unknown
       campos?: unknown
@@ -83,21 +76,28 @@ Deno.serve(async (req) => {
           )
     }
 
-    const lectura = await leerHojaConGemini({
-      apiKey,
-      campos,
-      imagen: new Uint8Array(await foto.arrayBuffer()),
-      tipoImagen: foto.type || 'image/jpeg',
-      modelo: Deno.env.get('GEMINI_MODEL') || MODELO_POR_DEFECTO,
-      url: Deno.env.get('GEMINI_API_URL') || undefined,
-      signal: AbortSignal.timeout(LIMITE_GEMINI_MS),
-    })
+    const lectura = await leerHoja(
+      entorno,
+      {
+        campos,
+        imagen: new Uint8Array(await foto.arrayBuffer()),
+        tipoImagen: foto.type || 'image/jpeg',
+        signal: AbortSignal.timeout(LIMITE_LECTOR_MS),
+      },
+      lector,
+    )
     return responder(lectura)
   } catch (e) {
     if (e instanceof ErrorLectura)
       return responder(
         { error: e.message, tipo: e.tipo },
-        e.tipo === 'peticion' ? 400 : e.tipo === 'red' ? 503 : 422,
+        e.tipo === 'peticion'
+          ? 400
+          : e.tipo === 'red'
+            ? 503
+            : e.tipo === 'config'
+              ? 500
+              : 422,
       )
     console.error(e)
     return responder(

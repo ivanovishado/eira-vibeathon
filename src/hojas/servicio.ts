@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  LIMITE_GEMINI_MS,
+  LIMITE_LECTOR_MS,
   type CampoLectura,
   type ResultadoLectura,
 } from '../../supabase/functions/_shared/lecturaHoja.ts'
@@ -10,10 +10,10 @@ import { ErrorSincronizacion } from '../sync/remoto'
 export const BUCKET_HOJAS = 'hojas'
 
 /**
- * La función espera a Gemini hasta LIMITE_GEMINI_MS, más bajar la foto de Storage.
+ * La función espera al lector (OCR.space o Gemini) hasta LIMITE_LECTOR_MS, más bajar la foto de Storage.
  * Cortar antes en el cliente haría reintentar (y pagar) una lectura que sí iba a llegar.
  */
-export const LIMITE_LECTURA_MS = LIMITE_GEMINI_MS + 30_000
+export const LIMITE_LECTURA_MS = LIMITE_LECTOR_MS + 30_000
 
 /**
  * Lo que la app necesita del servidor para leer hojas. Los errores son
@@ -88,8 +88,16 @@ export function crearServicioSupabase(
           const cuerpo = (await respuesta
             .clone()
             .json()
-            .catch(() => undefined)) as { error?: string } | undefined
+            .catch(() => undefined)) as
+            { error?: string; tipo?: string } | undefined
           if (cuerpo?.error) mensaje = cuerpo.error
+          // Llave inválida o cuota agotada: reintentar no lo arregla; se muestra en
+          // la hoja hasta que alguien lo corrija y la reintente.
+          if (cuerpo?.tipo === 'config')
+            throw new ErrorSincronizacion(
+              'rechazo',
+              `Configuración del lector: ${mensaje}`,
+            )
         }
         throw porEstado(
           respuesta instanceof Response ? respuesta.status : undefined,

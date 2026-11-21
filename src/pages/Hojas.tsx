@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { sincronizacionConfigurada } from '../cuenta/config'
 import { medicoDeCuenta, useCuenta } from '../cuenta/cuenta'
 import { db, type EstadoHoja, type Hoja } from '../db/schema'
@@ -12,6 +12,7 @@ import {
   leerHojasAhora,
   lectorSimulado,
   motivoSinLectura,
+  puedeLeer,
   useLecturaHojas,
 } from '../hojas/fondo'
 import { capturarHoja, descartarHoja, reintentarLectura } from '../hojas/hojas'
@@ -135,6 +136,29 @@ function Captura() {
   const [arrastrando, setArrastrando] = useState(false)
   const [procesando, setProcesando] = useState(0)
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string }>()
+  // Con red y sesión, tras una sola foto se espera la lectura y se abre la revisión.
+  const [esperando, setEsperando] = useState<string>()
+  const vioLeyendo = useRef(false)
+  const navegar = useNavigate()
+  const enEspera = useLiveQuery(
+    () => (esperando ? db.hojas.get(esperando) : undefined),
+    [esperando],
+  )
+  useEffect(() => {
+    if (!esperando || !enEspera) return
+    if (enEspera.estado === 'leyendo') vioLeyendo.current = true
+    else if (enEspera.estado === 'por-revisar' || enEspera.estado === 'error')
+      navegar(`/hojas/${esperando}`)
+    else if (enEspera.estado === 'sin-enviar' && vioLeyendo.current) {
+      // Falló la red o la sesión: queda en la cola, como sin conexión.
+      setEsperando(undefined)
+      setAviso({
+        tipo: 'ok',
+        texto:
+          'Hoja guardada en el dispositivo; no se pudo leer ahora y se reintentará sola.',
+      })
+    }
+  }, [esperando, enEspera, navegar])
 
   async function guardar(lista: FileList | File[] | null) {
     const imagenes = [...(lista ?? [])].filter(
@@ -145,17 +169,26 @@ function Captura() {
     const capturadaPor =
       medicoDeCuenta().medico ?? (await leerRecordados()).medico
     let guardadas = 0
+    let ultima: string | undefined
     const errores: string[] = []
     for (const archivo of imagenes) {
       setProcesando((n) => n + 1)
       try {
-        await capturarHoja(await reducirImagen(archivo), capturadaPor)
+        ultima = (
+          await capturarHoja(await reducirImagen(archivo), capturadaPor)
+        ).id
         guardadas++
       } catch (e) {
         errores.push(`${archivo.name}: ${e instanceof Error ? e.message : e}`)
       } finally {
         setProcesando((n) => n - 1)
       }
+    }
+    if (imagenes.length === 1 && ultima && puedeLeer()) {
+      vioLeyendo.current = false
+      setEsperando(ultima)
+      void leerHojasAhora()
+      return
     }
     setAviso(
       errores.length
@@ -230,6 +263,24 @@ function Captura() {
       <p aria-live="polite" className="text-sm">
         {procesando > 0 ? (
           <span className="text-slate-600">Guardando foto…</span>
+        ) : esperando ? (
+          <span
+            role="status"
+            className="inline-flex flex-wrap items-center justify-center gap-2 text-pink-800"
+          >
+            <span
+              aria-hidden
+              className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-pink-300 border-t-pink-700"
+            />
+            Leyendo la hoja… al terminar se abre la revisión.
+            <button
+              type="button"
+              onClick={() => setEsperando(undefined)}
+              className="underline"
+            >
+              Seguir capturando
+            </button>
+          </span>
         ) : (
           aviso && (
             <span

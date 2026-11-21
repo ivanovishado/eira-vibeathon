@@ -64,6 +64,67 @@ describe('de la lectura al formulario', () => {
     })
   })
 
+  it('lo que no pasa la validación del formulario queda vacío y dudoso', () => {
+    const invalida = {
+      valores: {
+        'paciente.celular': '951 123 456',
+        'paciente.curp': 'Mwwwn',
+        'paciente.fechaNacimiento': '2090-01-01',
+        'consulta.signosVitales.pesoKg': '685',
+        'consulta.signosVitales.presionArterial': '130-85',
+        'consulta.signosVitales.temperaturaC': '36.6',
+      },
+      dudosos: [],
+      ilegibles: [],
+      leidaEn: '2026-11-20T10:00:00.000Z',
+    }
+    const paciente = pacienteDeLectura(invalida, new Date('2026-11-20'))
+    expect(paciente.form).toMatchObject({
+      celular: '',
+      curp: '',
+      fechaNacimiento: '',
+    })
+    expect(paciente.marcas).toEqual({
+      celular: 'dudoso',
+      curp: 'dudoso',
+      fechaNacimiento: 'dudoso',
+    })
+    const consulta = consultaDeLectura(invalida)
+    expect(consulta.valores).toEqual({
+      'signosVitales.pesoKg': '',
+      'signosVitales.presionArterial': '',
+      'signosVitales.temperaturaC': '36.6',
+    })
+    expect(consulta.marcas).toEqual({
+      'signosVitales.pesoKg': 'dudoso',
+      'signosVitales.presionArterial': 'dudoso',
+    })
+  })
+
+  it('normaliza celular y CURP leídos', () => {
+    const { form, marcas } = pacienteDeLectura({
+      valores: {
+        'paciente.celular': '+52 1 951-123-4567',
+        'paciente.curp': 'macr 780314 mocrzs a1',
+      },
+      dudosos: [],
+      ilegibles: [],
+      leidaEn: '',
+    })
+    expect(form.celular).toBe('9511234567')
+    expect(form.curp).toBe('MACR780314MOCRZSA1')
+    expect(marcas).toEqual({})
+  })
+
+  it('cada campo lleva la etiqueta impresa con la que lo ubica el OCR', () => {
+    for (const c of CAMPOS_LECTURA) expect(c.enHoja?.length).toBeGreaterThan(0)
+    expect(
+      CAMPOS_LECTURA.find(
+        (c) => c.id === 'consulta.signosVitales.frecuenciaCardiaca',
+      )?.enHoja,
+    ).toContain('Frec. cardiaca')
+  })
+
   it('sin lectura, todo vacío', () => {
     expect(pacienteDeLectura().form.nombres).toBe('')
     expect(consultaDeLectura().valores).toEqual({})

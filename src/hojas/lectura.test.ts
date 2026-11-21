@@ -87,11 +87,12 @@ describe('leerHojasPendientes', () => {
       leidas: 1,
       errores: 1,
     })
-    expect(await db.hojas.get(a.id)).toMatchObject({
-      estado: 'error',
-      errorLectura: 'Falla simulada (rechazo)',
-    })
-    expect((await db.hojas.get(b.id))?.estado).toBe('por-revisar')
+    // Capturadas en el mismo milisegundo, el orden de lectura no está garantizado.
+    const hojas = [await db.hojas.get(a.id), await db.hojas.get(b.id)]
+    expect(hojas.map((h) => h?.estado).sort()).toEqual(['error', 'por-revisar'])
+    expect(hojas.find((h) => h?.estado === 'error')?.errorLectura).toBe(
+      'Falla simulada (rechazo)',
+    )
   })
 
   it('no pisa una hoja que alguien confirmó o descartó mientras se leía', async () => {

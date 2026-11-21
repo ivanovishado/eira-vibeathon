@@ -1,0 +1,4 @@
+{
+  "error": "E584: Rate limit reached for the shared 'helloworld' demo key, which all demo users share. Your request itself is fine. To continue, get a free personal OCR API key at https://ocr.space/ocrapi/freekey and send it as the apikey parameter. Questions? Ask in the OCR API forum: https://forum.ui.vision/c/ocr-api/10",
+  "retryAfter": 43
+}

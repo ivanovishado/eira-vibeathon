@@ -1,12 +1,13 @@
 /**
- * Lectura de una hoja de consulta en papel con Gemini: prompt, esquema de salida y
- * análisis de la respuesta. Sin dependencias de Deno ni del navegador: lo usan la Edge
- * Function `leer-hoja`, el script `npm run leer-hoja` y la app (tipos y validación).
+ * Tipos comunes de la lectura de hojas y el lector con Gemini (prompt, esquema de
+ * salida y análisis de la respuesta). Sin dependencias de Deno ni del navegador: lo
+ * usan la Edge Function `leer-hoja`, el script `npm run leer-hoja` y la app.
+ * El lector por omisión es OCR.space (`ocrSpace.ts`); ver `lectores.ts`.
  */
 
 export const MODELO_POR_DEFECTO = 'gemini-2.5-flash'
-/** Tiempo máximo que la Edge Function espera a Gemini. */
-export const LIMITE_GEMINI_MS = 90_000
+/** Tiempo máximo que la Edge Function dedica a leer una hoja (con reintentos). */
+export const LIMITE_LECTOR_MS = 90_000
 export const URL_GEMINI = 'https://generativelanguage.googleapis.com/v1beta'
 
 export type TipoCampoLectura = 'texto' | 'parrafo' | 'numero' | 'fecha'
@@ -19,6 +20,11 @@ export interface CampoLectura {
   tipo: TipoCampoLectura
   /** Pista de formato para el modelo ("10 dígitos", "120/80"). */
   ayuda?: string
+  /**
+   * Cómo aparece la etiqueta impresa en la hoja (la primera es la principal). El
+   * lector OCR ubica cada valor por estas etiquetas; si faltan, usa `etiqueta`.
+   */
+  enHoja?: string[]
 }
 
 export interface ResultadoLectura {
@@ -32,8 +38,10 @@ export interface ResultadoLectura {
  * - `peticion`: la petición no es válida.
  * - `modelo`: el modelo no devolvió una lectura utilizable (bloqueo, JSON inválido).
  * - `red`: el servicio no respondió o está saturado; conviene reintentar.
+ * - `config`: falta la llave, es inválida o se agotó la cuota; lo arregla quien
+ *   administra el servidor, no reintentar.
  */
-export type TipoErrorLectura = 'peticion' | 'modelo' | 'red'
+export type TipoErrorLectura = 'peticion' | 'modelo' | 'red' | 'config'
 
 export class ErrorLectura extends Error {
   readonly tipo: TipoErrorLectura
@@ -68,7 +76,13 @@ export function validarCampos(entrada: unknown): CampoLectura[] {
       campo.etiqueta.length > 100 ||
       !TIPOS.includes(campo.tipo as TipoCampoLectura) ||
       (campo.ayuda !== undefined &&
-        (typeof campo.ayuda !== 'string' || campo.ayuda.length > 200))
+        (typeof campo.ayuda !== 'string' || campo.ayuda.length > 200)) ||
+      (campo.enHoja !== undefined &&
+        (!Array.isArray(campo.enHoja) ||
+          campo.enHoja.length > 5 ||
+          campo.enHoja.some(
+            (e) => typeof e !== 'string' || !e.trim() || e.length > 100,
+          )))
     )
       throw new ErrorLectura('peticion', 'Campo de lectura no válido.')
     vistos.add(campo.id)
@@ -77,6 +91,9 @@ export function validarCampos(entrada: unknown): CampoLectura[] {
       etiqueta: campo.etiqueta.trim(),
       tipo: campo.tipo as TipoCampoLectura,
       ...(campo.ayuda ? { ayuda: campo.ayuda } : {}),
+      ...(campo.enHoja?.length
+        ? { enHoja: campo.enHoja.map((e) => e.trim()) }
+        : {}),
     }
   })
 }
@@ -163,10 +180,14 @@ export function construirPeticion(
 
 const dos = (n: number) => String(n).padStart(2, '0')
 
-/** AAAA-MM-DD válida, o la conversión de D/M/AAAA; undefined si no se puede. */
+/**
+ * AAAA-MM-DD válida, o la conversión de D/M/AAAA (también D/M/AA: el siglo se supone
+ * y se avisa con `sigloSupuesto`); undefined si no es una fecha posible.
+ */
 export function normalizarFecha(
   texto: string,
-): { fecha: string; convertida: boolean } | undefined {
+  hoy = new Date(),
+): { fecha: string; convertida: boolean; sigloSupuesto?: true } | undefined {
   const valida = (a: number, m: number, d: number) => {
     const f = new Date(Date.UTC(a, m - 1, d))
     return (
@@ -175,21 +196,49 @@ export function normalizarFecha(
       f.getUTCDate() === d
     )
   }
-  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(texto)
+  const limpio = texto.trim().replace(/\s*([/.-])\s*/g, '$1')
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(limpio)
   if (m) {
     const [a, mes, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
     return valida(a, mes, d)
       ? { fecha: `${a}-${dos(mes)}-${dos(d)}`, convertida: false }
       : undefined
   }
-  m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(texto)
+  m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})$/.exec(limpio)
   if (m) {
-    const [d, mes, a] = [Number(m[1]), Number(m[2]), Number(m[3])]
-    return valida(a, mes, d)
-      ? { fecha: `${a}-${dos(mes)}-${dos(d)}`, convertida: true }
-      : undefined
+    const [d, mes] = [Number(m[1]), Number(m[2])]
+    let a = Number(m[3])
+    const corto = m[3].length === 2
+    if (corto) {
+      const siglo = Math.floor(hoy.getFullYear() / 100) * 100
+      a += a > hoy.getFullYear() - siglo ? siglo - 100 : siglo
+    }
+    if (!valida(a, mes, d)) return undefined
+    return {
+      fecha: `${a}-${dos(mes)}-${dos(d)}`,
+      convertida: true,
+      ...(corto ? { sigloSupuesto: true as const } : {}),
+    }
   }
   return undefined
+}
+
+/**
+ * Número con coma o punto decimal, sin unidades. Corrige las confusiones típicas del
+ * OCR (O→0, l/I→1) y lo avisa con `corregido`; undefined si no es un número.
+ */
+export function normalizarNumero(
+  texto: string,
+): { numero: string; corregido: boolean } | undefined {
+  let t = texto.trim().replace(/\s*(kg|cm|lpm|°\s*c|ºc|c)\.?$/i, '')
+  const original = t
+  t = t.replace(/[oO]/g, '0').replace(/[lI|]/g, '1')
+  t = t.replace(/\s+/g, '').replace(',', '.')
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return undefined
+  return {
+    numero: String(Number(t)),
+    corregido: t !== original.replace(/\s+/g, '').replace(',', '.'),
+  }
 }
 
 /**
@@ -230,13 +279,15 @@ export function analizarLectura(
         continue
       }
       valor = f.fecha
+      if (f.sigloSupuesto) dudoso = true
     } else if (c.tipo === 'numero') {
-      const n = Number(valor.replace(',', '.').replace(/[^\d.-]/g, ''))
-      if (!Number.isFinite(n) || !/\d/.test(valor)) {
+      const n = normalizarNumero(valor)
+      if (!n) {
         dudosos.push(c.id)
         continue
       }
-      valor = String(n)
+      valor = n.numero
+      if (n.corregido) dudoso = true
     }
     valores[c.id] = valor
     if (dudoso) dudosos.push(c.id)

@@ -1,9 +1,39 @@
 import { db as dbPorDefecto, type EiraDB, type ImagenHoja } from '../db/schema'
 import type { ImagenCapturada } from './hojas'
 import type { ServicioHojas } from './servicio'
+import { TAMANO_MAXIMO_OCR } from '../../supabase/functions/_shared/ocrSpace.ts'
 
 export const LADO_MAYOR = 2000
 const LADO_MINIATURA = 320
+/** Margen bajo el límite del lector (1 MB en el plan gratuito de OCR.space). */
+export const TAMANO_MAXIMO_FOTO = TAMANO_MAXIMO_OCR - 24 * 1024
+/**
+ * Del más nítido al más ligero: primero baja la calidad JPEG (la letra aguanta bien
+ * hasta ~0.7) y solo después la resolución.
+ */
+const INTENTOS_REDUCCION: [lado: number, calidad: number][] = [
+  [LADO_MAYOR, 0.85],
+  [LADO_MAYOR, 0.75],
+  [1800, 0.7],
+  [1600, 0.7],
+  [1400, 0.65],
+  [1200, 0.6],
+]
+
+/** La primera versión que cabe en `maximo` bytes (la última si ninguna cabe). */
+export async function reducirHastaCaber(
+  comprimir: (lado: number, calidad: number) => Promise<ArrayBuffer>,
+  maximo = TAMANO_MAXIMO_FOTO,
+): Promise<ArrayBuffer> {
+  let datos: ArrayBuffer | undefined
+  for (const [lado, calidad] of INTENTOS_REDUCCION) {
+    datos = await comprimir(lado, calidad)
+    if (datos.byteLength <= maximo) return datos
+  }
+  if (!datos || datos.byteLength > maximo)
+    throw new Error('La foto es demasiado pesada; vuelve a tomarla.')
+  return datos
+}
 
 async function aJpeg(
   fuente: ImageBitmap,
@@ -28,7 +58,10 @@ async function aJpeg(
   return blob.arrayBuffer()
 }
 
-/** Reduce la foto en el dispositivo (lado mayor ~2000 px, JPEG) y saca una miniatura. */
+/**
+ * Reduce la foto en el dispositivo (lado mayor ~2000 px, JPEG, menos de 1 MB) y saca
+ * una miniatura.
+ */
 export async function reducirImagen(archivo: Blob): Promise<ImagenCapturada> {
   let fuente: ImageBitmap
   try {
@@ -42,7 +75,9 @@ export async function reducirImagen(archivo: Blob): Promise<ImagenCapturada> {
   }
   try {
     return {
-      datos: await aJpeg(fuente, LADO_MAYOR, 0.85),
+      datos: await reducirHastaCaber((lado, calidad) =>
+        aJpeg(fuente, lado, calidad),
+      ),
       miniatura: await aJpeg(fuente, LADO_MINIATURA, 0.7),
       tipo: 'image/jpeg',
     }

@@ -42,6 +42,8 @@ export interface CampoConsulta {
   paso?: number
   patron?: RegExp
   mensajePatron?: string
+  /** Cómo viene impresa la etiqueta en la hoja de papel si no es igual a `etiqueta`. */
+  enHoja?: string[]
 }
 
 export type SeccionConsulta = 'visita' | 'signos' | 'clinica'
@@ -109,6 +111,7 @@ export const CAMPOS_CONSULTA: CampoConsulta[] = [
   {
     id: 'signosVitales.frecuenciaCardiaca',
     etiqueta: 'Frecuencia cardiaca',
+    enHoja: ['Frecuencia cardiaca', 'Frec. cardiaca'],
     tipo: 'numero',
     seccion: 'signos',
     unidad: 'lpm',
@@ -215,6 +218,27 @@ function leer(c: CapturaConsulta, id: IdCampo) {
   return (c.valores[id] ?? '').trim()
 }
 
+/** Error de formato o rango de un valor no vacío; undefined si es válido. */
+export function errorDeCampo(
+  campo: CampoConsulta,
+  v: string,
+): string | undefined {
+  if (campo.tipo === 'numero') {
+    const n = Number(v.replace(',', '.'))
+    if (!Number.isFinite(n)) return 'Debe ser un número.'
+    if (
+      (campo.min !== undefined && n < campo.min) ||
+      (campo.max !== undefined && n > campo.max)
+    )
+      return `Debe estar entre ${campo.min} y ${campo.max}${campo.unidad ? ` ${campo.unidad}` : ''}.`
+  } else if (campo.tipo === 'fecha' && !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return 'Fecha no válida.'
+  } else if (campo.patron && !campo.patron.test(v)) {
+    return campo.mensajePatron ?? 'Formato no válido.'
+  }
+  return undefined
+}
+
 export function validarCaptura(c: CapturaConsulta): Errores {
   const errores: Errores = {}
   for (const campo of CAMPOS_CONSULTA) {
@@ -223,20 +247,8 @@ export function validarCaptura(c: CapturaConsulta): Errores {
       if (campo.requerido) errores[campo.id] = 'Campo obligatorio.'
       continue
     }
-    if (campo.tipo === 'numero') {
-      const n = Number(v.replace(',', '.'))
-      if (!Number.isFinite(n)) errores[campo.id] = 'Debe ser un número.'
-      else if (
-        (campo.min !== undefined && n < campo.min) ||
-        (campo.max !== undefined && n > campo.max)
-      )
-        errores[campo.id] =
-          `Debe estar entre ${campo.min} y ${campo.max}${campo.unidad ? ` ${campo.unidad}` : ''}.`
-    } else if (campo.tipo === 'fecha' && !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-      errores[campo.id] = 'Fecha no válida.'
-    } else if (campo.patron && !campo.patron.test(v)) {
-      errores[campo.id] = campo.mensajePatron ?? 'Formato no válido.'
-    }
+    const error = errorDeCampo(campo, v)
+    if (error) errores[campo.id] = error
   }
   for (const e of c.estudios) {
     if (!TIPOS_ESTUDIO.includes(e.tipo))

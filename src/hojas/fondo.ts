@@ -23,7 +23,8 @@ export function obtenerServicio(): ServicioHojas | undefined {
   return servicio
 }
 
-const puedeLeer = () =>
+/** Hay red y sesión (o lector simulado): lo capturado se lee de inmediato. */
+export const puedeLeer = () =>
   navigator.onLine && (lectorSimulado || Boolean(leerCuenta()))
 
 let programador: Programador | undefined
