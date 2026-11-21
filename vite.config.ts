@@ -39,5 +39,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
+    // Las pruebas corren en modo solo local aunque exista un .env.local.
+    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' },
   },
 })
