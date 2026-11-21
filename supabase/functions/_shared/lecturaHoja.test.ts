@@ -113,8 +113,8 @@ describe('leerHojaConGemini', () => {
     expect(String(url)).toBe(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     )
-    expect((init?.headers as Record<string, string>)['x-goog-api-key']).toBe('llave-de-prueba')
-    const cuerpo = JSON.parse(String(init?.body))
+    expect((init!.headers as Record<string, string>)['x-goog-api-key']).toBe('llave-de-prueba')
+    const cuerpo = JSON.parse(String(init!.body))
     expect(cuerpo.generationConfig.responseMimeType).toBe('application/json')
     expect(cuerpo.contents[0].parts[0].inlineData).toEqual({ mimeType: 'image/jpeg', data: '/9g=' })
   })
