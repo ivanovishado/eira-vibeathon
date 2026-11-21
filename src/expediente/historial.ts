@@ -1,4 +1,11 @@
-import type { Brigada, Consulta, Estudio, TipoEstudio } from '../db/schema'
+import type {
+  AtencionExterna,
+  Brigada,
+  Consulta,
+  Estudio,
+  TipoEstudio,
+} from '../db/schema'
+import { agruparVersiones, type Versionado } from './versiones'
 
 export interface EntradaConsulta {
   tipo: 'consulta'
@@ -18,7 +25,13 @@ export interface EntradaEstudio {
   estudio: Estudio
 }
 
-export type EntradaHistorial = EntradaConsulta | EntradaEstudio
+/** Atención recibida fuera de EIRA (versión vigente y las que sustituyó). */
+export interface EntradaExterna extends Versionado<AtencionExterna> {
+  tipo: 'externa'
+  fecha: string
+}
+
+export type EntradaHistorial = EntradaConsulta | EntradaEstudio | EntradaExterna
 
 const masReciente = (
   a: { fecha: string; createdAt: string },
@@ -27,12 +40,14 @@ const masReciente = (
 
 /**
  * Línea de tiempo de una paciente, de lo más reciente a lo más antiguo. Los estudios
- * capturados en una consulta van dentro de ella; los sueltos son entradas propias.
+ * capturados en una consulta van dentro de ella; los sueltos son entradas propias. La
+ * atención fuera de EIRA aparece una vez por registro, con su versión vigente.
  */
 export function construirHistorial(
   consultas: Consulta[],
   estudios: Estudio[],
   brigadas: Brigada[] = [],
+  externas: AtencionExterna[] = [],
 ): EntradaHistorial[] {
   const porId = new Map(consultas.map((c) => [c.id, c]))
   const brigadaPorId = new Map(brigadas.map((b) => [b.id, b]))
@@ -69,7 +84,12 @@ export function construirHistorial(
     corregidaPor: correcciones.get(c.id),
     corrige: c.corrigeA ? porId.get(c.corrigeA) : undefined,
   }))
-  return [...entradas, ...sueltos].sort((a, b) =>
+  const atenciones: EntradaExterna[] = agruparVersiones(externas).map((g) => ({
+    ...g,
+    tipo: 'externa',
+    fecha: g.vigente.fecha,
+  }))
+  return [...entradas, ...sueltos, ...atenciones].sort((a, b) =>
     masReciente(
       { fecha: a.fecha, createdAt: creado(a) },
       { fecha: b.fecha, createdAt: creado(b) },
@@ -78,7 +98,19 @@ export function construirHistorial(
 }
 
 const creado = (e: EntradaHistorial) =>
-  e.tipo === 'consulta' ? e.consulta.createdAt : e.estudio.createdAt
+  e.tipo === 'consulta'
+    ? e.consulta.createdAt
+    : e.tipo === 'estudio'
+      ? e.estudio.createdAt
+      : e.vigente.createdAt
+
+/** Clave estable de una entrada de la línea de tiempo. */
+export const claveEntrada = (e: EntradaHistorial) =>
+  e.tipo === 'consulta'
+    ? e.consulta.id
+    : e.tipo === 'estudio'
+      ? e.estudio.id
+      : e.origen.id
 
 export interface ResumenHistorial {
   /** Consultas vigentes (sin contar las que fueron corregidas). */
@@ -86,6 +118,8 @@ export interface ResumenHistorial {
   ultimaConsulta?: EntradaConsulta
   /** Estudio más reciente de cada tipo, del más reciente al más antiguo. */
   ultimosEstudios: Estudio[]
+  /** Atención fuera de EIRA posterior a la última consulta (o toda, si no hay). */
+  externasDesdeUltima: AtencionExterna[]
 }
 
 export function resumirHistorial(
@@ -95,14 +129,45 @@ export function resumirHistorial(
     (e): e is EntradaConsulta => e.tipo === 'consulta' && !e.corregidaPor,
   )
   const estudiosVigentes = historial.flatMap((e) =>
-    e.tipo === 'estudio' ? [e.estudio] : e.corregidaPor ? [] : e.estudios,
+    e.tipo === 'estudio'
+      ? [e.estudio]
+      : e.tipo === 'consulta' && !e.corregidaPor
+        ? e.estudios
+        : [],
   )
   const porTipo = new Map<TipoEstudio, Estudio>()
   for (const e of estudiosVigentes.sort(masReciente))
     if (!porTipo.has(e.tipo)) porTipo.set(e.tipo, e)
+  const ultimaConsulta = vigentes[0]
+  const consultasPorId = new Map(
+    historial.flatMap((e) =>
+      e.tipo === 'consulta' ? [[e.consulta.id, e.consulta] as const] : [],
+    ),
+  )
+  // La última consulta y las versiones que corrigió.
+  const idsUltima = new Set<string>()
+  for (
+    let c: Consulta | undefined = ultimaConsulta?.consulta;
+    c && !idsUltima.has(c.id);
+    c = c.corrigeA ? consultasPorId.get(c.corrigeA) : undefined
+  )
+    idsUltima.add(c.id)
+  const desdeUltima = (a: AtencionExterna) => {
+    if (!ultimaConsulta) return true
+    if (a.consultaId && idsUltima.has(a.consultaId)) return false
+    // Con fecha aproximada el día es supuesto: se compara solo el mes.
+    return a.fechaAproximada
+      ? a.fecha.slice(0, 7) >= ultimaConsulta.fecha.slice(0, 7)
+      : a.fecha >= ultimaConsulta.fecha
+  }
   return {
     totalConsultas: vigentes.length,
-    ultimaConsulta: vigentes[0],
+    ultimaConsulta,
     ultimosEstudios: [...porTipo.values()],
+    externasDesdeUltima: historial.flatMap((e) =>
+      e.tipo === 'externa' && !e.vigente.retirado && desdeUltima(e.vigente)
+        ? [e.vigente]
+        : [],
+    ),
   }
 }

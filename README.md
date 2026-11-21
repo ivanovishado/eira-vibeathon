@@ -10,6 +10,7 @@ expedientes de pacientes sin conexión, y sincronice cuando haya wifi.
 - Cada escritura clínica pasa por `src/db/repo.ts`, que guarda el registro y lo anota en la cola de salida (`colaSalida`) en la misma transacción. La sincronización vacía esa cola.
 - Con Supabase configurado, la médica inicia sesión una vez (con internet, antes de la brigada) y la app sincroniza sola en segundo plano cuando hay red. Sin red, todo sigue funcionando y la sesión no se vuelve a pedir.
 - Las consultas no se editan; una corrección es una consulta nueva con `corrigeA`.
+- Antecedentes y atención recibida fuera de EIRA siguen la misma regla: corregir o quitar agrega una versión (`corrigeA`, `retirado`) y el expediente muestra el rastro de cambios. Sus campos son provisionales y se ajustan en `src/expediente/antecedentes.ts` y `src/expediente/atencionExterna.ts`.
 
 ## Desarrollo
 
@@ -88,4 +89,5 @@ Sin esas variables la prueba de integración se omite; `npm test` cubre la sincr
 2. Expediente y captura de consulta.
 3. Cuenta del médico y sincronización con Supabase.
 4. Lectura de hojas en papel con revisión humana.
-5. PIN, respaldo y demo.
+5. Historial entre visitas: antecedentes y atención fuera de EIRA.
+6. PIN, respaldo y demo.

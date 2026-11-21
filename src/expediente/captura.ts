@@ -4,10 +4,12 @@ import {
   aDatosConsulta,
   aDatosEstudios,
   esCaptura,
+  FILAS_CAPTURA,
   validarCaptura,
   type CapturaConsulta,
   type IdCampo,
 } from './formulario'
+import { aDatosRegistro, escribirRegistro } from './registros'
 
 /** Un borrador por paciente para consultas nuevas y uno por consulta corregida. */
 export function claveBorrador(pacienteId: string, corrigeA?: string): string {
@@ -69,8 +71,9 @@ export class CapturaInvalida extends Error {
 }
 
 /**
- * Guarda la consulta y sus estudios (vía el repositorio, que los anota en la cola de
- * salida) y borra el borrador, todo en una sola transacción local.
+ * Guarda la consulta, sus estudios y lo capturado sobre lo que pasó desde la última
+ * visita (vía el repositorio, que lo anota en la cola de salida) y borra el borrador,
+ * todo en una sola transacción local.
  */
 export async function registrarConsulta(
   pacienteId: string,
@@ -82,7 +85,15 @@ export async function registrarConsulta(
   const repo = crearRepo(db)
   return db.transaction(
     'rw',
-    [db.pacientes, db.consultas, db.estudios, db.colaSalida, db.borradores],
+    [
+      db.pacientes,
+      db.consultas,
+      db.estudios,
+      db.antecedentes,
+      db.atencionesExternas,
+      db.colaSalida,
+      db.borradores,
+    ],
     async () => {
       if (!(await db.pacientes.get(pacienteId)))
         throw new Error(`No existe la paciente ${pacienteId}`)
@@ -96,6 +107,21 @@ export async function registrarConsulta(
         consulta.fecha,
       ))
         await repo.crearEstudio(estudio)
+      for (const fila of captura[FILAS_CAPTURA.externa] ?? [])
+        await escribirRegistro(
+          'externa',
+          {
+            ...aDatosRegistro('externa', fila.valores, pacienteId),
+            consultaId: consulta.id,
+          },
+          db,
+        )
+      for (const fila of captura[FILAS_CAPTURA.antecedente] ?? [])
+        await escribirRegistro(
+          'antecedente',
+          aDatosRegistro('antecedente', fila.valores, pacienteId),
+          db,
+        )
       await db.borradores.delete(claveBorrador(pacienteId, captura.corrigeA))
       const recordados: Partial<Record<IdCampo, string>> = {}
       for (const id of CAMPOS_RECORDADOS) {

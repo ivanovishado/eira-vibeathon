@@ -1,6 +1,8 @@
 import { normalizarTelefono, normalizarTexto } from '../lib/normalize'
 import {
   db as dbPorDefecto,
+  type Antecedente,
+  type AtencionExterna,
   type Brigada,
   type Consulta,
   type EiraDB,
@@ -27,6 +29,8 @@ export type DatosPaciente = Omit<
 export type DatosBrigada = Omit<Brigada, 'id' | 'createdAt'>
 export type DatosConsulta = Omit<Consulta, 'id' | 'createdAt'>
 export type DatosEstudio = Omit<Estudio, 'id' | 'createdAt'>
+export type DatosAntecedente = Omit<Antecedente, 'id' | 'createdAt'>
+export type DatosAtencionExterna = Omit<AtencionExterna, 'id' | 'createdAt'>
 
 function prepararPaciente(datos: DatosPaciente) {
   return {
@@ -118,6 +122,24 @@ export function crearRepo(db: EiraDB = dbPorDefecto) {
     crearEstudio(datos: DatosEstudio): Promise<Estudio> {
       return escribir(
         'estudios',
+        { ...datos, id: nuevoId(), createdAt: ahora() },
+        'crear',
+      )
+    },
+
+    crearAntecedente(datos: DatosAntecedente): Promise<Antecedente> {
+      return escribir(
+        'antecedentes',
+        { ...datos, id: nuevoId(), createdAt: ahora() },
+        'crear',
+      )
+    },
+
+    crearAtencionExterna(
+      datos: DatosAtencionExterna,
+    ): Promise<AtencionExterna> {
+      return escribir(
+        'atencionesExternas',
         { ...datos, id: nuevoId(), createdAt: ahora() },
         'crear',
       )
