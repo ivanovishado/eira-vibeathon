@@ -18,6 +18,7 @@ const grabacion = (nombre: string) =>
   )
 const hoja1 = JSON.parse(grabacion('ocrspace-hoja-1.json'))
 const hoja2 = JSON.parse(grabacion('ocrspace-hoja-2.json'))
+const hoja1Columnas = JSON.parse(grabacion('ocrspace-hoja-1-columnas.json'))
 
 const json = (cuerpo: unknown, status = 200) =>
   new Response(JSON.stringify(cuerpo), {
@@ -50,6 +51,43 @@ describe('OCR.space con respuestas grabadas', () => {
     expect(l.valores['paciente.curp']).toBe('Mwwwn')
     expect(l.dudosos).toEqual([])
     expect(l.ilegibles).toEqual([])
+  })
+
+  it('hoja 1 en columnas: asigna cada valor por su posición bajo la etiqueta', () => {
+    // El texto plano trae "Nombre(s) Primer apellido Segundo apellido" y debajo
+    // "Rosa Elena Martinez Cruz": sin posiciones no se sabe qué es de quién.
+    const texto: string = hoja1Columnas.ParsedResults[0].ParsedText
+    expect(texto).toContain('Nombre(s) Primer apellido Segundo apellido')
+    const l = analizarRespuestaOcrSpace(
+      hoja1Columnas,
+      CAMPOS_LECTURA,
+      'ocr',
+      TITULOS_HOJA,
+    )
+    expect(l.valores).toMatchObject({
+      'paciente.nombres': 'Rosa Elena',
+      'paciente.apellidoPaterno': 'Martinez',
+      'paciente.apellidoMaterno': 'Cruz',
+      'paciente.fechaNacimiento': '1978-03-14',
+      'paciente.celular': '951 123 4567',
+      'paciente.comunidad': 'San Miguel del Valle',
+      'paciente.municipio': 'Tlacolula',
+      'consulta.fecha': '2026-11-20',
+      'consulta.medico': 'Dra. Laura Gómez',
+      'consulta.motivo': 'Tamizaje de rutina',
+      'consulta.signosVitales.pesoKg': '68.5',
+      'consulta.signosVitales.tallaCm': '156',
+      'consulta.signosVitales.presionArterial': '130/85',
+      'consulta.signosVitales.frecuenciaCardiaca': '78',
+      'consulta.signosVitales.temperaturaC': '36.6',
+      'consulta.antecedentes': 'Madre con cáncer de mama. G3 P3.',
+      'consulta.exploracion': 'Mamas simétricas, sin nódulos palpables.',
+      'consulta.diagnostico': 'Sana. Exploración mamaria normal.',
+      'consulta.plan': 'Mastografía en 1 año. Papanicolaou en próxima brigada.',
+    })
+    // El garabato de la CURP llega como texto; lo filtra el formulario.
+    expect(l.valores['paciente.curp']).toBe('wwwwww')
+    expect(l.dudosos).toEqual([])
   })
 
   it('hoja 2: lo vacío o ilegible queda dudoso y el año de dos dígitos también', () => {
@@ -115,6 +153,7 @@ describe('OCR.space con respuestas grabadas', () => {
     expect((init!.headers as Record<string, string>).apikey).toBe('llave')
     const cuerpo = init!.body as FormData
     expect(cuerpo.get('OCREngine')).toBe('3')
+    expect(cuerpo.get('isOverlayRequired')).toBe('true')
     expect(cuerpo.get('file')).toBeInstanceOf(Blob)
     expect(cuerpo.get('apikey')).toBeNull()
   })

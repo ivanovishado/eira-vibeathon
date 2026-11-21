@@ -233,6 +233,77 @@ export function ubicarValores(
   return { valores, encontrados }
 }
 
+/** Fragmento de texto con su posición en la foto (TextOverlay de OCR.space). */
+export interface Fragmento {
+  texto: string
+  izquierda: number
+  arriba: number
+  alto: number
+}
+
+/**
+ * Texto etiqueta / valor a partir de la posición de cada fragmento, para hojas en
+ * columnas: el OCR puede devolver un renglón de etiquetas ("Nombre(s)  Primer
+ * apellido  Segundo apellido") y debajo el de valores, sin que el texto diga qué
+ * valor es de quién. A cada etiqueta le toca lo que está debajo de ella en su
+ * columna, hasta la siguiente etiqueta de esa columna o el siguiente título.
+ */
+export function textoDeFragmentos(
+  fragmentos: Fragmento[],
+  campos: CampoLectura[],
+  titulos: string[] = [],
+): string {
+  const etiquetas = etiquetasDe(campos)
+  const deTitulos = titulos
+    .map((t) => palabrasEtiqueta(t))
+    .filter((p) => p.length > 0)
+  const fs = fragmentos.flatMap((f) => {
+    const { texto: limpio, titulo } = limpiarLinea(f.texto)
+    if (!limpio) return []
+    const etiqueta = separarEtiqueta(limpio, etiquetas)
+    const esTitulo =
+      titulo ||
+      (!etiqueta &&
+        deTitulos.some((t) => coincide(palabrasEtiqueta(limpio), t)))
+    return [{ ...f, limpio, etiqueta, esTitulo, centro: f.arriba + f.alto / 2 }]
+  })
+  const salida: string[] = []
+  for (const e of fs) {
+    if (!e.etiqueta) continue
+    salida.push(e.limpio)
+    if (!e.etiqueta.resto) {
+      const alto = Math.max(e.alto, 1)
+      const enColumna = (f: (typeof fs)[number]) =>
+        f.izquierda >= e.izquierda - alto &&
+        f.izquierda <= e.izquierda + 3 * alto
+      const debajo = (f: (typeof fs)[number]) => f.centro > e.centro + alto / 2
+      const limite = Math.min(
+        Infinity,
+        ...fs
+          .filter(
+            (f) => debajo(f) && (f.esTitulo || (f.etiqueta && enColumna(f))),
+          )
+          .map((f) => f.arriba),
+      )
+      salida.push(
+        ...fs
+          .filter(
+            (f) =>
+              !f.etiqueta &&
+              !f.esTitulo &&
+              enColumna(f) &&
+              debajo(f) &&
+              f.arriba < limite,
+          )
+          .sort((a, b) => a.arriba - b.arriba)
+          .map((f) => f.limpio),
+      )
+    }
+    salida.push('')
+  }
+  return salida.join('\n')
+}
+
 /**
  * Lectura a partir del texto del OCR. Sin ayuda de un modelo, se marca dudoso:
  * - el campo cuya etiqueta no aparece en el texto o que no trae valor;

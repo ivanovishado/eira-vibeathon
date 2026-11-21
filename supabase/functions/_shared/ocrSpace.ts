@@ -8,7 +8,11 @@ import {
   type CampoLectura,
   type ResultadoLectura,
 } from './lecturaHoja.ts'
-import { analizarTextoHoja } from './textoHoja.ts'
+import {
+  analizarTextoHoja,
+  textoDeFragmentos,
+  type Fragmento,
+} from './textoHoja.ts'
 
 export const URL_OCR_SPACE = 'https://api.ocr.space/parse/image'
 /** Engine 3 es el que lee letra manuscrita (cuota gratuita aparte: 1,000 al mes). */
@@ -25,6 +29,17 @@ interface RespuestaOcrSpace {
     ParsedText?: string
     FileParseExitCode?: number | string
     ErrorMessage?: string | string[]
+    TextOverlay?: {
+      Lines?: {
+        Words?: {
+          WordText?: string
+          Left?: number
+          Top?: number
+          Height?: number
+          Width?: number
+        }[]
+      }[]
+    }
   }[]
   OCRExitCode?: number | string
   IsErroredOnProcessing?: boolean
@@ -32,6 +47,53 @@ interface RespuestaOcrSpace {
   ErrorDetails?: string | string[]
   error?: string
   retryAfter?: number
+}
+
+/**
+ * Fragmentos con posición, uno por línea del OCR; las palabras de una línea que
+ * están juntas se unen (el Engine 3 ya las da unidas; los otros motores, no).
+ */
+function fragmentosDe(r: RespuestaOcrSpace): Fragmento[] {
+  let desplazamiento = 0
+  return (r.ParsedResults ?? []).flatMap((p) => {
+    const fragmentos: Fragmento[] = []
+    for (const linea of p.TextOverlay?.Lines ?? []) {
+      let actual: (Fragmento & { derecha: number }) | undefined
+      for (const w of linea.Words ?? []) {
+        const [izquierda, arriba, alto, ancho] = [
+          Number(w.Left),
+          Number(w.Top) + desplazamiento,
+          Number(w.Height),
+          Number(w.Width),
+        ]
+        if (!w.WordText || ![izquierda, arriba, alto, ancho].every(isFinite))
+          continue
+        if (
+          actual &&
+          izquierda - actual.derecha < Math.max(alto, actual.alto)
+        ) {
+          actual.texto += ` ${w.WordText}`
+          actual.derecha = izquierda + ancho
+          actual.alto = Math.max(actual.alto, alto)
+        } else {
+          if (actual) fragmentos.push(actual)
+          actual = {
+            texto: w.WordText,
+            izquierda,
+            arriba,
+            alto,
+            derecha: izquierda + ancho,
+          }
+        }
+      }
+      if (actual) fragmentos.push(actual)
+    }
+    desplazamiento = Math.max(
+      desplazamiento,
+      ...fragmentos.map((f) => f.arriba + f.alto + 1),
+    )
+    return fragmentos
+  })
 }
 
 const texto = (v: unknown) =>
@@ -162,7 +224,25 @@ export function analizarRespuestaOcrSpace(
       'modelo',
       'No se encontró texto en la foto; revisa que la hoja se vea completa y enfocada.',
     )
-  const lectura = analizarTextoHoja(textoHoja, campos, modelo, titulos)
+  // El texto plano sirve si viene en orden etiqueta → valor; si la hoja salió en
+  // renglones de varias etiquetas, la posición de cada fragmento dice qué es de quién.
+  // Gana la lectura que encuentra más valores.
+  const porTexto = analizarTextoHoja(textoHoja, campos, modelo, titulos)
+  const fragmentos = fragmentosDe(r)
+  const porPosicion = fragmentos.length
+    ? analizarTextoHoja(
+        textoDeFragmentos(fragmentos, campos, titulos),
+        campos,
+        modelo,
+        titulos,
+      )
+    : undefined
+  const lectura =
+    porPosicion &&
+    Object.keys(porPosicion.valores).length >
+      Object.keys(porTexto.valores).length
+      ? porPosicion
+      : porTexto
   if (
     lectura.dudosos.length === campos.length &&
     !Object.keys(lectura.valores).length
@@ -237,6 +317,7 @@ export async function leerHojaConOcrSpace({
       `hoja.${EXTENSION[tipoImagen] ?? 'jpg'}`,
     )
     formulario.append('OCREngine', motor)
+    formulario.append('isOverlayRequired', 'true')
     formulario.append('scale', 'true')
     formulario.append('detectOrientation', 'true')
     let respuesta: Response
