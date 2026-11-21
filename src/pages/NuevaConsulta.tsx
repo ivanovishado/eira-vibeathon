@@ -30,6 +30,7 @@ import {
 } from '../expediente/presentacion'
 import { useCapturaConsulta } from '../expediente/useCapturaConsulta'
 import { TEXTO_MARCA, type MarcaLectura } from '../hojas/campos'
+import { leerHojasAhora } from '../hojas/fondo'
 import {
   claveBorradorHoja,
   confirmarHoja,
@@ -168,6 +169,8 @@ export function FormularioConsulta({
             consulta: await registrarConsulta(pacienteId, captura),
             pacienteId,
           }
+      // Si la hoja se pasó a mano sin leerse, su foto aún no está en Storage.
+      if (hoja) void leerHojasAhora()
       navegar(`/pacientes/${guardadaEn}`, {
         replace: true,
         state: { consultaGuardada: consulta.id } satisfies EstadoExpediente,

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { crearDB, type EiraDB } from '../db/schema'
 import { crearProgramador } from '../sync/programador'
-import { capturarHoja } from './hojas'
+import { capturarHoja, confirmarHoja } from './hojas'
 import {
+  fotosPorSubir,
   hojasPorLeer,
   leerHojasPendientes,
   LECTURA_ABANDONADA_MS,
@@ -121,6 +122,37 @@ describe('leerHojasPendientes', () => {
     expect(await hojasPorLeer(db, despues)).toHaveLength(1)
     await db.imagenesHoja.delete(hoja.id)
     expect(await hojasPorLeer(db, despues)).toHaveLength(0)
+  })
+
+  it('sube la foto de una hoja que se pasó a mano sin leerse', async () => {
+    const servicio = crearServicioSimulado()
+    const hoja = await capturarHoja(imagen(), undefined, db)
+    await confirmarHoja(
+      hoja.id,
+      { nueva: { nombres: 'Ana', apellidoPaterno: 'Ruiz', telefonos: [] } },
+      {
+        valores: {
+          fecha: '2026-11-20',
+          medico: 'Dra. Laura',
+          motivo: 'Tamizaje',
+        },
+        estudios: [],
+      },
+      db,
+    )
+    expect(await fotosPorSubir(db)).toHaveLength(1)
+    servicio.fallar('red')
+    await expect(leerHojasPendientes(servicio, db)).rejects.toMatchObject({
+      tipo: 'red',
+    })
+    await leerHojasPendientes(servicio, db)
+    expect(servicio.lecturasPedidas).toBe(0)
+    expect(servicio.archivos.has(`${hoja.id}.jpg`)).toBe(true)
+    expect(await db.hojas.get(hoja.id)).toMatchObject({
+      estado: 'confirmada',
+      rutaImagen: `${hoja.id}.jpg`,
+    })
+    expect(await fotosPorSubir(db)).toHaveLength(0)
   })
 
   it('con el programador, reintenta tras un fallo de red', async () => {

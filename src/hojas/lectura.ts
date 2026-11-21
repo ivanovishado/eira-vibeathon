@@ -24,6 +24,20 @@ export async function hojasPorLeer(
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 }
 
+/** Hojas que ya no se leerán (se pasaron a mano, por ejemplo) y cuya foto solo está aquí. */
+export async function fotosPorSubir(
+  db: EiraDB = dbPorDefecto,
+): Promise<Hoja[]> {
+  const sinRuta = (
+    await db.hojas
+      .where('estado')
+      .anyOf('por-revisar', 'confirmada', 'descartada', 'error')
+      .toArray()
+  ).filter((h) => !h.rutaImagen)
+  const conFoto = await db.imagenesHoja.bulkGet(sinRuta.map((h) => h.id))
+  return sinRuta.filter((_, i) => conFoto[i])
+}
+
 /**
  * Sube la foto y pide la lectura de cada hoja pendiente, una por una. Un rechazo deja
  * esa hoja en "error" y sigue con las demás; un fallo de red o de sesión la regresa a
@@ -93,6 +107,23 @@ export async function leerHojasPendientes(
       await siSigueLeyendo(id, { estado: 'sin-enviar' })
       throw error
     }
+  }
+
+  // Respaldo de la foto original para verla desde otros dispositivos.
+  for (const { id } of await fotosPorSubir(db)) {
+    const imagen = await db.imagenesHoja.get(id)
+    if (!imagen) continue
+    try {
+      await servicio.subir(rutaImagen(id), imagen.datos, imagen.tipo)
+    } catch (e) {
+      const error = comoErrorSincronizacion(e)
+      if (error.tipo === 'rechazo') continue
+      throw error
+    }
+    await db.transaction('rw', [db.hojas, db.colaSalida], async () => {
+      if ((await db.hojas.get(id))?.rutaImagen) return
+      await repo.actualizarHoja(id, { rutaImagen: rutaImagen(id) })
+    })
   }
   return resultado
 }
