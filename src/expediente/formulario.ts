@@ -245,6 +245,13 @@ export function validarCaptura(c: CapturaConsulta): Errores {
         validarRegistro(REGISTROS[clase].campos, fila.valores),
       ))
         errores[`${clase}.${fila.clave}.${campo}`] = error
+  const fechaConsulta = c.valores.fecha ?? ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaConsulta))
+    for (const fila of c[FILAS_CAPTURA.externa] ?? []) {
+      const clave = `externa.${fila.clave}.fecha` as const
+      if (!errores[clave] && (fila.valores.fecha ?? '') > fechaConsulta)
+        errores[clave] = 'No puede ser posterior a la fecha de la consulta.'
+    }
   return errores
 }
 

@@ -7,6 +7,7 @@ import {
   capturaParaCorregir,
   capturaVacia,
   esCaptura,
+  nuevaFila,
   nuevoEstudio,
   validarCaptura,
   type CapturaConsulta,
@@ -156,5 +157,20 @@ describe('formulario de consulta', () => {
     expect(
       esCaptura({ valores: {}, estudios: [{ clave: 'x', tipo: 'rayos' }] }),
     ).toBe(false)
+  })
+
+  it('la atención externa no puede ser posterior a la consulta', () => {
+    const fila = nuevaFila({
+      tipo: 'consulta',
+      fecha: '2026-06-01',
+      resumen: 'Nutrición',
+    })
+    const c = { ...base({ fecha: '2026-05-01' }), externas: [fila] }
+    expect(validarCaptura(c)[`externa.${fila.clave}.fecha`]).toBe(
+      'No puede ser posterior a la fecha de la consulta.',
+    )
+    expect(
+      validarCaptura({ ...c, valores: { ...c.valores, fecha: '2026-06-01' } }),
+    ).toEqual({})
   })
 })
