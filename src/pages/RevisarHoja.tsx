@@ -178,9 +178,10 @@ function EstadoLectura({ hoja }: { hoja: Hoja }) {
   const cuenta = useCuenta()
   const lectura = useLecturaHojas()
   if (hoja.estado === 'por-revisar') {
+    // Cuenta lo resaltado en los formularios (incluye lo que no pasó su validación).
     const n =
-      (hoja.lectura?.dudosos.length ?? 0) +
-      (hoja.lectura?.ilegibles.length ?? 0)
+      Object.keys(pacienteDeLectura(hoja.lectura).marcas).length +
+      Object.keys(consultaDeLectura(hoja.lectura).marcas).length
     return (
       <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
         Revisa cada campo contra la foto.{' '}
