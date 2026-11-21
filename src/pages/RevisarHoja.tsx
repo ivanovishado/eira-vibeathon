@@ -118,6 +118,9 @@ function Revision({ hoja }: { hoja: Hoja }) {
     | { id: 'paciente' }
     | { id: 'consulta'; eleccion: EleccionPaciente; sinGuardar?: Paciente }
   >({ id: 'paciente' })
+  const [revisionPaciente, setRevisionPaciente] = useState<RevisionPaciente>({
+    editados: new Set(),
+  })
   const { valores, marcas } = useMemo(
     () => consultaDeLectura(hoja.lectura),
     [hoja.lectura],
@@ -161,6 +164,8 @@ function Revision({ hoja }: { hoja: Hoja }) {
   return (
     <PasoPaciente
       hoja={hoja}
+      revision={revisionPaciente}
+      onRevision={setRevisionPaciente}
       onElegir={(eleccion, sinGuardar) =>
         setPaso({ id: 'consulta', eleccion, sinGuardar })
       }
@@ -219,19 +224,28 @@ function EstadoLectura({ hoja }: { hoja: Hoja }) {
   )
 }
 
+/** Lo que la persona corrigió en el paso 1; se conserva al ir y volver del paso 2. */
+interface RevisionPaciente {
+  form?: FormPaciente
+  editados: ReadonlySet<string>
+}
+
 function PasoPaciente({
   hoja,
+  revision,
+  onRevision,
   onElegir,
 }: {
   hoja: Hoja
+  revision: RevisionPaciente
+  onRevision: (cambio: (r: RevisionPaciente) => RevisionPaciente) => void
   onElegir: (eleccion: EleccionPaciente, sinGuardar?: Paciente) => void
 }) {
   const indice = useIndicePacientes()
   const leida = useMemo(() => pacienteDeLectura(hoja.lectura), [hoja.lectura])
   // Mientras nadie escriba, el formulario sigue a la lectura (puede llegar después).
-  const [editado, setForm] = useState<FormPaciente>()
-  const form = editado ?? leida.form
-  const [editados, setEditados] = useState<ReadonlySet<string>>(new Set())
+  const form = revision.form ?? leida.form
+  const editados = revision.editados
   const [errores, setErrores] = useState<ErroresPaciente>({})
   const [otraPersona, setOtraPersona] = useState(false)
   const [busqueda, setBusqueda] = useState('')
@@ -252,8 +266,10 @@ function PasoPaciente({
   )
 
   function cambiar(campo: keyof FormPaciente, valor: string) {
-    setEditados((e) => new Set(e).add(campo))
-    setForm((f) => ({ ...(f ?? leida.form), [campo]: valor }))
+    onRevision((r) => ({
+      form: { ...(r.form ?? leida.form), [campo]: valor },
+      editados: new Set(r.editados).add(campo),
+    }))
     setErrores((e) => ({ ...e, [campo]: undefined }))
     setOtraPersona(false)
   }
