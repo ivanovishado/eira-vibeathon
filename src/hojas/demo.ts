@@ -27,10 +27,7 @@ export const LECTURAS_DEMO: Omit<ResultadoLectura, 'modelo'>[] = [
       'consulta.diagnostico': 'Sana. Exploración mamaria normal.',
       'consulta.plan': 'Mastografía en 1 año. Papanicolaou en próxima brigada.',
     },
-    dudosos: [
-      'paciente.celular',
-      'consulta.signosVitales.presionArterial',
-    ],
+    dudosos: ['paciente.celular', 'consulta.signosVitales.presionArterial'],
     ilegibles: ['paciente.curp'],
   },
   {
@@ -53,6 +50,9 @@ export const LECTURAS_DEMO: Omit<ResultadoLectura, 'modelo'>[] = [
       'consulta.plan': 'Ultrasonido mamario. Referir a ginecología.',
     },
     dudosos: ['paciente.fechaNacimiento', 'consulta.signosVitales.pesoKg'],
-    ilegibles: ['paciente.celular', 'consulta.signosVitales.frecuenciaCardiaca'],
+    ilegibles: [
+      'paciente.celular',
+      'consulta.signosVitales.frecuenciaCardiaca',
+    ],
   },
 ]

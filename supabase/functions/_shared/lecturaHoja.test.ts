@@ -13,7 +13,11 @@ import {
 const campos: CampoLectura[] = [
   { id: 'paciente.nombres', etiqueta: 'Nombre', tipo: 'texto' },
   { id: 'paciente.fechaNacimiento', etiqueta: 'Nacimiento', tipo: 'fecha' },
-  { id: 'consulta.signosVitales.pesoKg', etiqueta: 'Peso (kg)', tipo: 'numero' },
+  {
+    id: 'consulta.signosVitales.pesoKg',
+    etiqueta: 'Peso (kg)',
+    tipo: 'numero',
+  },
   { id: 'consulta.diagnostico', etiqueta: 'Diagnóstico', tipo: 'parrafo' },
 ]
 
@@ -36,7 +40,9 @@ describe('prompt y esquema', () => {
   it('valida los campos que manda el cliente', () => {
     expect(validarCampos(campos)).toHaveLength(4)
     expect(() => validarCampos([])).toThrow(ErrorLectura)
-    expect(() => validarCampos([{ id: '1; drop', etiqueta: 'x', tipo: 'texto' }])).toThrow()
+    expect(() =>
+      validarCampos([{ id: '1; drop', etiqueta: 'x', tipo: 'texto' }]),
+    ).toThrow()
   })
 })
 
@@ -79,7 +85,11 @@ describe('analizarRespuestaGemini', () => {
 
   it('reporta bloqueos y JSON inválido', () => {
     expect(() =>
-      analizarRespuestaGemini({ promptFeedback: { blockReason: 'SAFETY' } }, campos, 'm'),
+      analizarRespuestaGemini(
+        { promptFeedback: { blockReason: 'SAFETY' } },
+        campos,
+        'm',
+      ),
     ).toThrow(/SAFETY/)
     expect(() =>
       analizarRespuestaGemini(
@@ -91,7 +101,10 @@ describe('analizarRespuestaGemini', () => {
   })
 
   it('normaliza fechas', () => {
-    expect(normalizarFecha('2026-1-5')).toEqual({ fecha: '2026-01-05', convertida: false })
+    expect(normalizarFecha('2026-1-5')).toEqual({
+      fecha: '2026-01-05',
+      convertida: false,
+    })
     expect(normalizarFecha('ayer')).toBeUndefined()
   })
 })
@@ -99,7 +112,9 @@ describe('analizarRespuestaGemini', () => {
 describe('leerHojaConGemini', () => {
   it('manda la llave en x-goog-api-key y JSON estructurado', async () => {
     const f = vi.fn(async (..._args: Parameters<typeof fetch>) =>
-      Response.json(respuesta({ paciente__nombres: { valor: 'Ana', estado: 'claro' } })),
+      Response.json(
+        respuesta({ paciente__nombres: { valor: 'Ana', estado: 'claro' } }),
+      ),
     )
     const r = await leerHojaConGemini({
       apiKey: 'llave-de-prueba',
@@ -108,15 +123,23 @@ describe('leerHojaConGemini', () => {
       tipoImagen: 'image/jpeg',
       fetch: f as typeof fetch,
     })
-    expect(r).toMatchObject({ valores: { 'paciente.nombres': 'Ana' }, modelo: 'gemini-2.5-flash' })
+    expect(r).toMatchObject({
+      valores: { 'paciente.nombres': 'Ana' },
+      modelo: 'gemini-2.5-flash',
+    })
     const [url, init] = f.mock.calls[0]
     expect(String(url)).toBe(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     )
-    expect((init!.headers as Record<string, string>)['x-goog-api-key']).toBe('llave-de-prueba')
+    expect((init!.headers as Record<string, string>)['x-goog-api-key']).toBe(
+      'llave-de-prueba',
+    )
     const cuerpo = JSON.parse(String(init!.body))
     expect(cuerpo.generationConfig.responseMimeType).toBe('application/json')
-    expect(cuerpo.contents[0].parts[0].inlineData).toEqual({ mimeType: 'image/jpeg', data: '/9g=' })
+    expect(cuerpo.contents[0].parts[0].inlineData).toEqual({
+      mimeType: 'image/jpeg',
+      data: '/9g=',
+    })
   })
 
   it('429 y 5xx son de red (se reintentan)', async () => {

@@ -46,7 +46,10 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey)
     return responder(
-      { error: 'Falta configurar GEMINI_API_KEY en el servidor.', tipo: 'config' },
+      {
+        error: 'Falta configurar GEMINI_API_KEY en el servidor.',
+        tipo: 'config',
+      },
       500,
     )
 
@@ -86,6 +89,9 @@ Deno.serve(async (req) => {
         e.tipo === 'peticion' ? 400 : e.tipo === 'red' ? 503 : 422,
       )
     console.error(e)
-    return responder({ error: 'Error inesperado al leer la hoja.', tipo: 'red' }, 500)
+    return responder(
+      { error: 'Error inesperado al leer la hoja.', tipo: 'red' },
+      500,
+    )
   }
 })

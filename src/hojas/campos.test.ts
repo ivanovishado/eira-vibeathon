@@ -12,13 +12,19 @@ describe('CAMPOS_LECTURA', () => {
     for (const c of CAMPOS_CONSULTA)
       if (c.tipo !== 'brigada') expect(ids).toContain(`consulta.${c.id}`)
     expect(ids).not.toContain('consulta.brigadaId')
-    expect(CAMPOS_LECTURA.find((c) => c.id === 'paciente.fechaNacimiento')?.tipo).toBe('fecha')
+    expect(
+      CAMPOS_LECTURA.find((c) => c.id === 'paciente.fechaNacimiento')?.tipo,
+    ).toBe('fecha')
   })
 
   it('las lecturas de demo solo usan campos conocidos', () => {
     const ids = new Set(CAMPOS_LECTURA.map((c) => c.id))
     for (const l of LECTURAS_DEMO)
-      for (const id of [...Object.keys(l.valores), ...l.dudosos, ...l.ilegibles])
+      for (const id of [
+        ...Object.keys(l.valores),
+        ...l.dudosos,
+        ...l.ilegibles,
+      ])
         expect(ids).toContain(id)
   })
 })

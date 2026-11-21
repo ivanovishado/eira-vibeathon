@@ -1,9 +1,6 @@
 import { crearRepo } from '../db/repo'
 import { db as dbPorDefecto, type EiraDB, type Hoja } from '../db/schema'
-import {
-  comoErrorSincronizacion,
-  ErrorSincronizacion,
-} from '../sync/remoto'
+import { comoErrorSincronizacion, ErrorSincronizacion } from '../sync/remoto'
 import { CAMPOS_LECTURA } from './campos'
 import type { ServicioHojas } from './servicio'
 
@@ -65,7 +62,8 @@ export async function leerHojasPendientes(
       let ruta = hoja.rutaImagen
       if (!ruta) {
         const imagen = await db.imagenesHoja.get(id)
-        if (!imagen) throw new ErrorSincronizacion(
+        if (!imagen)
+          throw new ErrorSincronizacion(
             'rechazo',
             'La foto ya no está en este dispositivo.',
           )

@@ -174,7 +174,8 @@ function EstadoLectura({ hoja }: { hoja: Hoja }) {
   const lectura = useLecturaHojas()
   if (hoja.estado === 'por-revisar') {
     const n =
-      (hoja.lectura?.dudosos.length ?? 0) + (hoja.lectura?.ilegibles.length ?? 0)
+      (hoja.lectura?.dudosos.length ?? 0) +
+      (hoja.lectura?.ilegibles.length ?? 0)
     return (
       <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
         Revisa cada campo contra la foto.{' '}
@@ -187,8 +188,8 @@ function EstadoLectura({ hoja }: { hoja: Hoja }) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
         <span>
-          No se pudo leer la hoja{hoja.errorLectura && `: ${hoja.errorLectura}`}.
-          Puedes reintentar o pasarla a mano.
+          No se pudo leer la hoja{hoja.errorLectura && `: ${hoja.errorLectura}`}
+          . Puedes reintentar o pasarla a mano.
         </span>
         <button
           type="button"
@@ -273,7 +274,13 @@ function PasoPaciente({
     const t = new Date().toISOString()
     onElegir(
       { nueva: datos },
-      { ...datos, id: ID_NUEVA, nombreBusqueda: '', createdAt: t, updatedAt: t },
+      {
+        ...datos,
+        id: ID_NUEVA,
+        nombreBusqueda: '',
+        createdAt: t,
+        updatedAt: t,
+      },
     )
   }
 
@@ -307,7 +314,10 @@ function PasoPaciente({
           const id = `paciente-${c}`
           return (
             <div key={c} className="flex flex-col gap-1">
-              <label htmlFor={id} className="text-sm font-medium text-slate-700">
+              <label
+                htmlFor={id}
+                className="text-sm font-medium text-slate-700"
+              >
                 {CAMPOS_PACIENTE[c].etiqueta}
                 {(c === 'nombres' || c === 'apellidoPaterno') && (
                   <span className="text-pink-700"> *</span>
@@ -328,7 +338,9 @@ function PasoPaciente({
                   {TEXTO_MARCA[m]}
                 </p>
               )}
-              {errores[c] && <p className="text-xs text-red-700">{errores[c]}</p>}
+              {errores[c] && (
+                <p className="text-xs text-red-700">{errores[c]}</p>
+              )}
             </div>
           )
         })}
@@ -355,7 +367,9 @@ function PasoPaciente({
           </p>
         )}
         <label className="mt-2 flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">Buscar otra paciente</span>
+          <span className="font-medium text-slate-700">
+            Buscar otra paciente
+          </span>
           <input
             type="search"
             value={busqueda}

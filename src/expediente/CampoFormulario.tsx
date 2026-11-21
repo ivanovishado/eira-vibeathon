@@ -32,8 +32,9 @@ export function CampoFormulario({
     value: valor,
     'aria-invalid': !!error,
     'aria-describedby':
-      [error && `${id}-error`, marca && `${id}-marca`].filter(Boolean).join(' ') ||
-      undefined,
+      [error && `${id}-error`, marca && `${id}-marca`]
+        .filter(Boolean)
+        .join(' ') || undefined,
     className: `${estiloEntrada} ${error ? 'border-red-500' : marca ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200' : 'border-slate-300'}`,
   }
   let entrada: React.ReactNode

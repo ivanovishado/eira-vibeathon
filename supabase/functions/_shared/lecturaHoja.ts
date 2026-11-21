@@ -168,7 +168,9 @@ export function normalizarFecha(
   const valida = (a: number, m: number, d: number) => {
     const f = new Date(Date.UTC(a, m - 1, d))
     return (
-      f.getUTCFullYear() === a && f.getUTCMonth() === m - 1 && f.getUTCDate() === d
+      f.getUTCFullYear() === a &&
+      f.getUTCMonth() === m - 1 &&
+      f.getUTCDate() === d
     )
   }
   let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(texto)
@@ -205,8 +207,7 @@ export function analizarLectura(
   const ilegibles: string[] = []
   for (const c of campos) {
     const crudo = objeto[llave(c.id)] as
-      | { valor?: unknown; estado?: unknown }
-      | undefined
+      { valor?: unknown; estado?: unknown } | undefined
     const estado: EstadoCampo = ESTADOS.includes(crudo?.estado as EstadoCampo)
       ? (crudo!.estado as EstadoCampo)
       : 'vacio'

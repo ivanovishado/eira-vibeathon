@@ -82,7 +82,8 @@ export function VisorFoto({ url, alt }: { url: string; alt: string }) {
           punteros.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
           if (punteros.current.size === 2 && pellizco.current) {
             hacerZoom(
-              (pellizco.current.zoom * distancia()) / pellizco.current.distancia,
+              (pellizco.current.zoom * distancia()) /
+                pellizco.current.distancia,
             )
             return
           }

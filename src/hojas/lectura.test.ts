@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { crearDB, type EiraDB } from '../db/schema'
 import { crearProgramador } from '../sync/programador'
 import { capturarHoja } from './hojas'
-import { hojasPorLeer, leerHojasPendientes, LECTURA_ABANDONADA_MS } from './lectura'
+import {
+  hojasPorLeer,
+  leerHojasPendientes,
+  LECTURA_ABANDONADA_MS,
+} from './lectura'
 import { crearServicioSimulado } from './servicioSimulado'
 
 let db: EiraDB

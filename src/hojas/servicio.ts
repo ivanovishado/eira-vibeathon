@@ -47,7 +47,11 @@ export function crearServicioSupabase(
   }
 
   function errorStorage(error: unknown) {
-    const e = error as { message?: string; statusCode?: string; status?: number }
+    const e = error as {
+      message?: string
+      statusCode?: string
+      status?: number
+    }
     const status = e.status ?? (Number(e.statusCode) || undefined)
     return porEstado(status, e.message ?? String(error))
   }
@@ -86,7 +90,10 @@ export function crearServicioSupabase(
         )
       }
       if (!data || typeof data !== 'object' || !('valores' in data))
-        throw new ErrorSincronizacion('rechazo', 'Respuesta de lectura inválida.')
+        throw new ErrorSincronizacion(
+          'rechazo',
+          'Respuesta de lectura inválida.',
+        )
       return data
     },
 
@@ -96,7 +103,10 @@ export function crearServicioSupabase(
         .from(BUCKET_HOJAS)
         .download(ruta)
       if (error) throw errorStorage(error)
-      return { datos: await data.arrayBuffer(), tipo: data.type || 'image/jpeg' }
+      return {
+        datos: await data.arrayBuffer(),
+        tipo: data.type || 'image/jpeg',
+      }
     },
   }
 }

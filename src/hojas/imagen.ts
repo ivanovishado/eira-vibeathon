@@ -32,9 +32,13 @@ async function aJpeg(
 export async function reducirImagen(archivo: Blob): Promise<ImagenCapturada> {
   let fuente: ImageBitmap
   try {
-    fuente = await createImageBitmap(archivo, { imageOrientation: 'from-image' })
+    fuente = await createImageBitmap(archivo, {
+      imageOrientation: 'from-image',
+    })
   } catch {
-    throw new Error('No se pudo abrir la imagen; prueba con una foto JPEG o PNG.')
+    throw new Error(
+      'No se pudo abrir la imagen; prueba con una foto JPEG o PNG.',
+    )
   }
   try {
     return {

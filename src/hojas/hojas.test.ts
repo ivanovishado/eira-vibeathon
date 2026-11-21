@@ -22,7 +22,9 @@ const imagen = () => ({
   miniatura: new Uint8Array([1]).buffer,
   tipo: 'image/jpeg',
 })
-const captura = (valores: CapturaConsulta['valores'] = {}): CapturaConsulta => ({
+const captura = (
+  valores: CapturaConsulta['valores'] = {},
+): CapturaConsulta => ({
   valores: {
     fecha: '2026-11-20',
     medico: 'Dra. Laura Gómez',
@@ -50,7 +52,8 @@ describe('capturarHoja', () => {
 
 describe('estados', () => {
   it('una hoja confirmada ya no cambia', () => {
-    for (const a of ESTADOS_HOJA) expect(puedeCambiar('confirmada', a)).toBe(false)
+    for (const a of ESTADOS_HOJA)
+      expect(puedeCambiar('confirmada', a)).toBe(false)
   })
 
   it('descartar no borra; restaurar regresa a la bandeja', async () => {

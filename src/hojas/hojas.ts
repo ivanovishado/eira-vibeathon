@@ -51,7 +51,8 @@ export async function cambiarEstado(
   return db.transaction('rw', [db.hojas, db.colaSalida], async () => {
     const hoja = await db.hojas.get(id)
     if (!hoja) throw new Error(`No existe la hoja ${id}`)
-    if (!puedeCambiar(hoja.estado, a)) throw new CambioNoPermitido(hoja.estado, a)
+    if (!puedeCambiar(hoja.estado, a))
+      throw new CambioNoPermitido(hoja.estado, a)
     return crearRepo(db).actualizarHoja(id, { ...cambios, estado: a })
   })
 }

@@ -92,7 +92,10 @@ export function useCapturaConsulta(
                 .toArray(),
             )
           : capturaInicial(
-              capturaVacia({ ...(await leerRecordados()), ...medicoDeCuenta() }),
+              capturaVacia({
+                ...(await leerRecordados()),
+                ...medicoDeCuenta(),
+              }),
               valoresIniciales,
             ))
       if (!vigente) return

@@ -63,8 +63,8 @@ export function Hojas() {
       <div>
         <h1 className="text-xl font-semibold">Hojas en papel</h1>
         <p className="text-sm text-slate-600">
-          Fotografía las hojas de consulta; se leen cuando hay conexión y
-          nada llega al expediente hasta que alguien las revisa y confirma.
+          Fotografía las hojas de consulta; se leen cuando hay conexión y nada
+          llega al expediente hasta que alguien las revisa y confirma.
         </p>
       </div>
 
@@ -75,7 +75,9 @@ export function Hojas() {
           role="status"
           className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-900"
         >
-          {sinEnviar === 1 ? '1 hoja sin enviar. ' : `${sinEnviar} hojas sin enviar. `}
+          {sinEnviar === 1
+            ? '1 hoja sin enviar. '
+            : `${sinEnviar} hojas sin enviar. `}
           {motivo}
         </p>
       )}
@@ -98,7 +100,9 @@ export function Hojas() {
                 className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${pestana === p.id ? 'border-pink-700 text-pink-800' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
               >
                 {p.titulo}
-                {n > 0 && <span className="ml-1 text-xs text-slate-500">({n})</span>}
+                {n > 0 && (
+                  <span className="ml-1 text-xs text-slate-500">({n})</span>
+                )}
               </button>
             )
           })}
@@ -229,7 +233,9 @@ function Captura() {
         ) : (
           aviso && (
             <span
-              className={aviso.tipo === 'ok' ? 'text-emerald-700' : 'text-red-700'}
+              className={
+                aviso.tipo === 'ok' ? 'text-emerald-700' : 'text-red-700'
+              }
             >
               {aviso.texto}
             </span>
@@ -263,7 +269,11 @@ function FilaHoja({ hoja }: { hoja: Hoja }) {
       >
         <div className="flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-center text-[10px] leading-tight text-slate-500">
           {miniatura ? (
-            <img src={miniatura} alt="" className="h-full w-full object-cover" />
+            <img
+              src={miniatura}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
             'Foto en el servidor'
           )}
@@ -306,7 +316,11 @@ function FilaHoja({ hoja }: { hoja: Hoja }) {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('¿Descartar esta hoja? Se conserva en Descartadas.'))
+              if (
+                window.confirm(
+                  '¿Descartar esta hoja? Se conserva en Descartadas.',
+                )
+              )
                 void descartarHoja(hoja.id)
             }}
             className="text-sm text-slate-600 underline"
