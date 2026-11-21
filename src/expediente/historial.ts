@@ -139,15 +139,33 @@ export function resumirHistorial(
   for (const e of estudiosVigentes.sort(masReciente))
     if (!porTipo.has(e.tipo)) porTipo.set(e.tipo, e)
   const ultimaConsulta = vigentes[0]
+  const consultasPorId = new Map(
+    historial.flatMap((e) =>
+      e.tipo === 'consulta' ? [[e.consulta.id, e.consulta] as const] : [],
+    ),
+  )
+  // La última consulta y las versiones que corrigió.
+  const idsUltima = new Set<string>()
+  for (
+    let c: Consulta | undefined = ultimaConsulta?.consulta;
+    c && !idsUltima.has(c.id);
+    c = c.corrigeA ? consultasPorId.get(c.corrigeA) : undefined
+  )
+    idsUltima.add(c.id)
+  const desdeUltima = (a: AtencionExterna) => {
+    if (!ultimaConsulta) return true
+    if (a.consultaId && idsUltima.has(a.consultaId)) return false
+    // Con fecha aproximada el día es supuesto: se compara solo el mes.
+    return a.fechaAproximada
+      ? a.fecha.slice(0, 7) >= ultimaConsulta.fecha.slice(0, 7)
+      : a.fecha >= ultimaConsulta.fecha
+  }
   return {
     totalConsultas: vigentes.length,
     ultimaConsulta,
     ultimosEstudios: [...porTipo.values()],
     externasDesdeUltima: historial.flatMap((e) =>
-      e.tipo === 'externa' &&
-      !e.vigente.retirado &&
-      (!ultimaConsulta || e.fecha >= ultimaConsulta.fecha) &&
-      e.vigente.consultaId !== ultimaConsulta?.consulta.id
+      e.tipo === 'externa' && !e.vigente.retirado && desdeUltima(e.vigente)
         ? [e.vigente]
         : [],
     ),

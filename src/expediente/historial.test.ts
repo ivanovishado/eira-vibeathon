@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Consulta, Estudio } from '../db/schema'
+import type { AtencionExterna, Consulta, Estudio } from '../db/schema'
 import { claveEntrada, construirHistorial, resumirHistorial } from './historial'
 
 const consulta = (
@@ -114,5 +114,67 @@ describe('resumirHistorial', () => {
       ultimosEstudios: [],
       externasDesdeUltima: [],
     })
+  })
+})
+
+const externa = (
+  id: string,
+  fecha: string,
+  extra: Partial<AtencionExterna> = {},
+): AtencionExterna => ({
+  id,
+  pacienteId: 'p1',
+  tipo: 'consulta',
+  fecha,
+  resumen: 'Nutrición',
+  createdAt: `${fecha}T10:00:00.000Z`,
+  ...extra,
+})
+
+describe('atención fuera de EIRA desde la última consulta', () => {
+  const resumir = (consultas: Consulta[], externas: AtencionExterna[]) =>
+    resumirHistorial(
+      construirHistorial(consultas, [], [], externas),
+    ).externasDesdeUltima.map((a) => a.id)
+
+  it('sin consultas, muestra todo lo registrado', () => {
+    expect(resumir([], [externa('e1', '2026-03-01')])).toEqual(['e1'])
+  })
+
+  it('omite lo anterior a la última consulta y lo ya registrado en ella', () => {
+    const c = consulta('c1', '2026-05-10')
+    expect(
+      resumir(
+        [c],
+        [
+          externa('antes', '2026-04-01'),
+          externa('en-consulta', '2026-05-10', { consultaId: 'c1' }),
+          externa('despues', '2026-06-01'),
+        ],
+      ),
+    ).toEqual(['despues'])
+  })
+
+  it('reconoce lo registrado en una consulta que después se corrigió', () => {
+    const original = consulta('c1', '2026-05-10')
+    const correccion = consulta('c2', '2026-05-10', {
+      corrigeA: 'c1',
+      createdAt: '2026-05-11T10:00:00.000Z',
+    })
+    expect(
+      resumir(
+        [original, correccion],
+        [externa('e1', '2026-05-10', { consultaId: 'c1' })],
+      ),
+    ).toEqual([])
+  })
+
+  it('con fecha aproximada compara solo el mes', () => {
+    expect(
+      resumir(
+        [consulta('c1', '2026-05-20')],
+        [externa('e1', '2026-05-01', { fechaAproximada: true })],
+      ),
+    ).toEqual(['e1'])
   })
 })
