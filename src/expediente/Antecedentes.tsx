@@ -114,6 +114,7 @@ export function Antecedentes({
                 </strong>
                 : {ETIQUETAS_TIPO_ANTECEDENTE[c.version.tipo]} ·{' '}
                 {quien(c.version)} · {describirAntecedente(c.version)}
+                {c.version.notas && ` · ${c.version.notas}`}
                 {c.tipo === 'corregido' && c.anterior && (
                   <span className="text-slate-500">
                     {' '}

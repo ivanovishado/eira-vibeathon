@@ -275,6 +275,7 @@ function TarjetaExterna({
               </p>
               <p>
                 {fechaAtencion(v)} · {tituloAtencion(v)} · {v.resumen}
+                {v.lugar && ` · ${v.lugar}`}
               </p>
               {!siguiente.retirado && (
                 <p className="text-slate-500">
