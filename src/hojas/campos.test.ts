@@ -53,11 +53,15 @@ describe('de la lectura al formulario', () => {
 
   it('da valores y marcas para el formulario de consulta', () => {
     const { valores, marcas } = consultaDeLectura(lectura)
-    expect(valores).toEqual({
+    expect(valores).toMatchObject({
       motivo: 'Tamizaje',
       'signosVitales.pesoKg': '68.5',
       diagnostico: '',
     })
+    expect(Object.keys(valores)).not.toContain('desconocido')
+    // Lo no leído queda vacío para no heredar la fecha de hoy ni el médico recordado.
+    expect(valores.fecha).toBe('')
+    expect(valores.medico).toBe('')
     expect(marcas).toEqual({
       'signosVitales.pesoKg': 'dudoso',
       diagnostico: 'ilegible',
@@ -90,7 +94,7 @@ describe('de la lectura al formulario', () => {
       fechaNacimiento: 'dudoso',
     })
     const consulta = consultaDeLectura(invalida)
-    expect(consulta.valores).toEqual({
+    expect(consulta.valores).toMatchObject({
       'signosVitales.pesoKg': '',
       'signosVitales.presionArterial': '',
       'signosVitales.temperaturaC': '36.6',

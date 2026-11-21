@@ -64,6 +64,10 @@ function porPrefijo<K extends string>(
   const marcas: Partial<Record<K, MarcaLectura>> = {}
   if (!lectura) return { valores, marcas }
   const conocidos = new Set(CAMPOS_LECTURA.map((c) => c.id))
+  // Lo que no se leyó queda vacío: la fecha de hoy o el médico recordado no son los
+  // de la hoja.
+  for (const id of conocidos)
+    if (id.startsWith(prefijo)) valores[id.slice(prefijo.length) as K] = ''
   for (const [id, valor] of Object.entries(lectura.valores))
     if (id.startsWith(prefijo) && conocidos.has(id) && valor.trim())
       valores[id.slice(prefijo.length) as K] = valor.trim()
