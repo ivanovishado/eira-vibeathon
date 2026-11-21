@@ -10,7 +10,7 @@ import {
   leerRecordados,
   registrarConsulta,
 } from './captura'
-import { nuevoEstudio, type CapturaConsulta } from './formulario'
+import { nuevaFila, nuevoEstudio, type CapturaConsulta } from './formulario'
 
 let db: EiraDB
 let n = 0
@@ -126,5 +126,57 @@ describe('registrarConsulta', () => {
     ).rejects.toThrow()
     expect(await db.consultas.count()).toBe(0)
     expect(await db.estudios.count()).toBe(0)
+  })
+})
+
+describe('lo que pasó desde la última visita', () => {
+  it('guarda la atención externa y los antecedentes con la consulta', async () => {
+    const externa = nuevaFila({
+      tipo: 'consulta',
+      especialidad: 'Nutrición',
+      fecha: '2026-06-01',
+      resumen: 'Plan de alimentación',
+    })
+    const antecedente = nuevaFila({
+      ambito: 'familiar',
+      parentesco: 'Hermana',
+      tipo: 'cancer',
+      descripcion: 'Mama',
+    })
+    const consulta = await registrarConsulta(
+      pacienteId,
+      { ...captura(), externas: [externa], antecedentes: [antecedente] },
+      db,
+    )
+
+    expect(await db.atencionesExternas.toArray()).toMatchObject([
+      { pacienteId, consultaId: consulta.id, especialidad: 'Nutrición' },
+    ])
+    expect(await db.antecedentes.toArray()).toMatchObject([
+      { pacienteId, parentesco: 'Hermana', descripcion: 'Mama' },
+    ])
+    const tablas = (await db.colaSalida.toArray()).map((c) => c.tabla)
+    expect(tablas).toEqual(
+      expect.arrayContaining([
+        'consultas',
+        'atencionesExternas',
+        'antecedentes',
+      ]),
+    )
+  })
+
+  it('no guarda nada si una fila está incompleta', async () => {
+    const fila = nuevaFila({ tipo: 'estudio' })
+    await expect(
+      registrarConsulta(pacienteId, { ...captura(), externas: [fila] }, db),
+    ).rejects.toMatchObject({
+      errores: {
+        [`externa.${fila.clave}.fecha`]: expect.any(String),
+        [`externa.${fila.clave}.resumen`]: expect.any(String),
+      },
+    })
+    expect(await db.consultas.count()).toBe(0)
+    expect(await db.atencionesExternas.count()).toBe(0)
+    expect(await db.colaSalida.count()).toBe(0)
   })
 })

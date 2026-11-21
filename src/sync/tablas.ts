@@ -1,4 +1,6 @@
 import type {
+  Antecedente,
+  AtencionExterna,
   Brigada,
   Consulta,
   Estudio,
@@ -23,7 +25,7 @@ function tabla<T>(campos: Campos<T>, soloAgregar = false): ConfigTabla {
 /**
  * Tablas que se sincronizan, en el orden en que se suben. Para sincronizar una tabla
  * nueva: agrégala a `TablaSincronizada`, crea su migración en `supabase/migrations`
- * (con las columnas comunes y el trigger `marcar_cambio`) y añade aquí su entrada.
+ * (en snake_case, con las columnas comunes y el trigger `marcar_cambio`) y añade aquí su entrada.
  */
 export const TABLAS_SINCRONIZADAS = {
   pacientes: tabla<Paciente>({
@@ -75,6 +77,39 @@ export const TABLAS_SINCRONIZADAS = {
     resultado: true,
     createdAt: true,
   }),
+  antecedentes: tabla<Antecedente>(
+    {
+      id: true,
+      pacienteId: true,
+      corrigeA: true,
+      retirado: true,
+      ambito: true,
+      parentesco: true,
+      tipo: true,
+      descripcion: true,
+      cuando: true,
+      notas: true,
+      createdAt: true,
+    },
+    true,
+  ),
+  atencionesExternas: tabla<AtencionExterna>(
+    {
+      id: true,
+      pacienteId: true,
+      corrigeA: true,
+      retirado: true,
+      tipo: true,
+      especialidad: true,
+      fecha: true,
+      fechaAproximada: true,
+      lugar: true,
+      resumen: true,
+      consultaId: true,
+      createdAt: true,
+    },
+    true,
+  ),
 } satisfies Record<TablaSincronizada, ConfigTabla>
 
 export const ORDEN_TABLAS = Object.keys(

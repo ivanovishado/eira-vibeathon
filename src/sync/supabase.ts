@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { obtenerCliente } from '../cuenta/cliente'
+import { aSnake } from './filas'
 import { ErrorSincronizacion, type ClienteRemoto } from './remoto'
 
 const ID_CERO = '00000000-0000-0000-0000-000000000000'
@@ -41,7 +42,7 @@ export function crearRemotoSupabase(
     async subir(tabla, filas, soloAgregar) {
       const cliente = await conSesion()
       const { error, status } = await cliente
-        .from(tabla)
+        .from(aSnake(tabla))
         .upsert(filas, { onConflict: 'id', ignoreDuplicates: soloAgregar })
       if (error) throw clasificar(error, status)
     },
@@ -49,7 +50,7 @@ export function crearRemotoSupabase(
     async cambiosDesde(tabla, cursor, limite) {
       const cliente = await conSesion()
       const { data, error, status } = await cliente.rpc('cambios_desde', {
-        tabla,
+        tabla: aSnake(tabla),
         desde_xid: cursor?.xid ?? '0',
         desde_id: cursor?.id ?? ID_CERO,
         limite,
