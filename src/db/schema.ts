@@ -135,6 +135,63 @@ export interface AtencionExterna extends RegistroVersionado {
   consultaId?: string
 }
 
+/**
+ * - `sin-enviar`: la foto solo está en el dispositivo que la tomó (o falta pedir la lectura).
+ * - `leyendo`: se está subiendo la foto o esperando la lectura del modelo.
+ * - `por-revisar`: hay una lectura; nada ha llegado al expediente.
+ * - `confirmada`: una persona revisó y guardó la paciente y la consulta.
+ * - `descartada`: no se usará; se conserva.
+ * - `error`: la lectura falló; se puede reintentar o capturar a mano.
+ */
+export const ESTADOS_HOJA = [
+  'sin-enviar',
+  'leyendo',
+  'por-revisar',
+  'confirmada',
+  'descartada',
+  'error',
+] as const
+export type EstadoHoja = (typeof ESTADOS_HOJA)[number]
+
+/** Lo que el modelo leyó de una hoja; las llaves son las de `CAMPOS_LECTURA`. */
+export interface LecturaHoja {
+  valores: Record<string, string>
+  /** Campos que el modelo no leyó con seguridad. */
+  dudosos: string[]
+  /** Campos escritos pero ilegibles; su valor queda vacío. */
+  ilegibles: string[]
+  modelo?: string
+  leidaEn: string
+}
+
+/**
+ * Hoja de papel fotografiada. La foto no viaja en esta tabla: vive en `imagenesHoja`
+ * (local) y en el bucket privado `hojas` de Storage (`rutaImagen`).
+ * `createdAt` es cuándo se fotografió.
+ */
+export interface Hoja {
+  id: string
+  estado: EstadoHoja
+  /** Ruta en Storage; solo existe cuando la foto ya se subió. */
+  rutaImagen?: string
+  capturadaPor?: string
+  lectura?: LecturaHoja
+  errorLectura?: string
+  pacienteId?: string
+  consultaId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Foto de una hoja guardada en el dispositivo (no se sincroniza). */
+export interface ImagenHoja {
+  hojaId: string
+  /** JPEG reducido; ArrayBuffer y no Blob para que IndexedDB lo guarde en cualquier navegador. */
+  datos: ArrayBuffer
+  miniatura: ArrayBuffer
+  tipo: string
+}
+
 export type TablaSincronizada =
   | 'pacientes'
   | 'brigadas'
@@ -142,6 +199,7 @@ export type TablaSincronizada =
   | 'estudios'
   | 'antecedentes'
   | 'atencionesExternas'
+  | 'hojas'
 
 /** Cambio local pendiente de subir al servidor. */
 export interface CambioPendiente {
@@ -169,6 +227,8 @@ export type EiraDB = Dexie & {
   borradores: EntityTable<Borrador, 'clave'>
   antecedentes: EntityTable<Antecedente, 'id'>
   atencionesExternas: EntityTable<AtencionExterna, 'id'>
+  hojas: EntityTable<Hoja, 'id'>
+  imagenesHoja: EntityTable<ImagenHoja, 'hojaId'>
 }
 
 export function crearDB(nombre = 'eira-expedientes'): EiraDB {
@@ -184,6 +244,10 @@ export function crearDB(nombre = 'eira-expedientes'): EiraDB {
   db.version(2).stores({
     antecedentes: 'id, pacienteId',
     atencionesExternas: 'id, pacienteId, fecha',
+  })
+  db.version(3).stores({
+    hojas: 'id, estado, createdAt, consultaId',
+    imagenesHoja: 'hojaId',
   })
   return db
 }

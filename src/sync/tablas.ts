@@ -4,6 +4,7 @@ import type {
   Brigada,
   Consulta,
   Estudio,
+  Hoja,
   Paciente,
   TablaSincronizada,
 } from '../db/schema'
@@ -26,6 +27,7 @@ function tabla<T>(campos: Campos<T>, soloAgregar = false): ConfigTabla {
  * Tablas que se sincronizan, en el orden en que se suben. Para sincronizar una tabla
  * nueva: agrégala a `TablaSincronizada`, crea su migración en `supabase/migrations`
  * (en snake_case, con las columnas comunes y el trigger `marcar_cambio`) y añade aquí su entrada.
+ * Los archivos (fotos de hojas) no viajan por estas tablas sino por Storage.
  */
 export const TABLAS_SINCRONIZADAS = {
   pacientes: tabla<Paciente>({
@@ -110,6 +112,18 @@ export const TABLAS_SINCRONIZADAS = {
     },
     true,
   ),
+  hojas: tabla<Hoja>({
+    id: true,
+    estado: true,
+    rutaImagen: true,
+    capturadaPor: true,
+    lectura: true,
+    errorLectura: true,
+    pacienteId: true,
+    consultaId: true,
+    createdAt: true,
+    updatedAt: true,
+  }),
 } satisfies Record<TablaSincronizada, ConfigTabla>
 
 export const ORDEN_TABLAS = Object.keys(

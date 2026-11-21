@@ -7,6 +7,7 @@ import {
   type Consulta,
   type EiraDB,
   type Estudio,
+  type Hoja,
   type Paciente,
   type TablaSincronizada,
 } from './schema'
@@ -31,6 +32,7 @@ export type DatosConsulta = Omit<Consulta, 'id' | 'createdAt'>
 export type DatosEstudio = Omit<Estudio, 'id' | 'createdAt'>
 export type DatosAntecedente = Omit<Antecedente, 'id' | 'createdAt'>
 export type DatosAtencionExterna = Omit<AtencionExterna, 'id' | 'createdAt'>
+export type DatosHoja = Omit<Hoja, 'id' | 'createdAt' | 'updatedAt'>
 
 function prepararPaciente(datos: DatosPaciente) {
   return {
@@ -142,6 +144,29 @@ export function crearRepo(db: EiraDB = dbPorDefecto) {
         'atencionesExternas',
         { ...datos, id: nuevoId(), createdAt: ahora() },
         'crear',
+      )
+    },
+
+    crearHoja(datos: DatosHoja): Promise<Hoja> {
+      const t = ahora()
+      return escribir(
+        'hojas',
+        { ...datos, id: nuevoId(), createdAt: t, updatedAt: t },
+        'crear',
+      )
+    },
+
+    /** Reemplaza los campos dados; un campo con `undefined` se borra. */
+    async actualizarHoja(
+      id: string,
+      cambios: Partial<DatosHoja>,
+    ): Promise<Hoja> {
+      const actual = await db.hojas.get(id)
+      if (!actual) throw new Error(`No existe la hoja ${id}`)
+      return escribir(
+        'hojas',
+        { ...actual, ...cambios, id, updatedAt: ahora() },
+        'actualizar',
       )
     },
 

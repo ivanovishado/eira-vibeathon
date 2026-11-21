@@ -24,12 +24,20 @@ export function BuscarPaciente() {
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Buscar paciente</h1>
-        <Link
-          to={altaUrl}
-          className="rounded-lg bg-pink-700 px-4 py-2 text-sm font-medium text-white hover:bg-pink-800"
-        >
-          Nueva paciente
-        </Link>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link
+            to="/hojas"
+            className="rounded-lg border border-pink-300 bg-white px-4 py-2 text-sm font-medium text-pink-800 hover:bg-pink-50"
+          >
+            Hojas en papel
+          </Link>
+          <Link
+            to={altaUrl}
+            className="rounded-lg bg-pink-700 px-4 py-2 text-sm font-medium text-white hover:bg-pink-800"
+          >
+            Nueva paciente
+          </Link>
+        </div>
       </div>
 
       <form role="search" onSubmit={(e) => e.preventDefault()}>
