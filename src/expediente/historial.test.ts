@@ -76,6 +76,12 @@ describe('construirHistorial', () => {
     ])
     expect(porId.a).toMatchObject({ corregidaPor: { id: 'c' } })
     expect(porId.b).toMatchObject({ corrige: { id: 'a' } })
+    expect(porId.b).toMatchObject({ corregidaPor: { id: 'c' } })
+    expect(porId.c).not.toHaveProperty('corregidaPor.id')
+
+    const r = resumirHistorial(h)
+    expect(r.totalConsultas).toBe(1)
+    expect(r.ultimaConsulta?.consulta.id).toBe('c')
   })
 })
 

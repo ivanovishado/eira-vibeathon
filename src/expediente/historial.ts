@@ -36,11 +36,19 @@ export function construirHistorial(
 ): EntradaHistorial[] {
   const porId = new Map(consultas.map((c) => [c.id, c]))
   const brigadaPorId = new Map(brigadas.map((b) => [b.id, b]))
+  // Si una consulta tiene varias correcciones, solo la más reciente queda vigente:
+  // la original y las correcciones anteriores quedan sustituidas por ella.
   const correcciones = new Map<string, Consulta>()
+  const ultimaCorreccion = new Map<string, Consulta>()
   for (const c of [...consultas].sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt),
   ))
-    if (c.corrigeA) correcciones.set(c.corrigeA, c)
+    if (c.corrigeA) {
+      const anterior = ultimaCorreccion.get(c.corrigeA)
+      if (anterior) correcciones.set(anterior.id, c)
+      ultimaCorreccion.set(c.corrigeA, c)
+      correcciones.set(c.corrigeA, c)
+    }
 
   const estudiosPorConsulta = new Map<string, Estudio[]>()
   const sueltos: EntradaEstudio[] = []
