@@ -71,12 +71,43 @@ npx vitest run src/sync/supabase.integration.test.ts
 
 Sin esas variables la prueba de integración se omite; `npm test` cubre la sincronización con un servidor simulado (`src/sync/servidorSimulado.ts`). Para usar la app contra Supabase local, pon su URL y llave en `.env.local`.
 
+## Hojas en papel (lectura con Gemini)
+
+La pantalla **Hojas** (encabezado o búsqueda) fotografía hojas de consulta: en el celular abre la cámara trasera; en la laptop se eligen o arrastran archivos. La foto se reduce en el dispositivo (lado mayor ~2000 px, JPEG) y se guarda en IndexedDB sin necesitar red. Con red y sesión, en segundo plano se sube al bucket privado `hojas` y la Edge Function `leer-hoja` pide la lectura a Gemini; la hoja queda **por revisar**. Al revisar (foto y campos a la vez; paso 1 paciente, paso 2 consulta con el formulario de siempre) los campos dudosos o ilegibles se resaltan y lo ilegible queda vacío. **Nada llega al expediente hasta confirmar**; entonces paciente y consulta se guardan por `src/db/repo.ts` → `colaSalida` y la hoja queda ligada a ellas. Sin Supabase las hojas se quedan «sin enviar» y se pasan a mano.
+
+- Los campos a leer salen de `CAMPOS_PACIENTE` (`src/lib/formPaciente.ts`) y `CAMPOS_CONSULTA` (`src/expediente/formulario.ts`): cambiar el formulario cambia la lectura (`src/hojas/campos.ts`).
+- Prompt, esquema y análisis de la respuesta: `supabase/functions/_shared/lecturaHoja.ts` (sin dependencias de Deno ni del navegador).
+- La llave de Gemini vive solo en el servidor (secreto de la función), nunca en `VITE_*`.
+
+### Publicar la función
+
+```sh
+supabase link --project-ref <ref>
+supabase db push                                  # aplica la migración 20261121020000_hojas.sql (tabla, bucket y políticas)
+supabase secrets set GEMINI_API_KEY=<llave de https://aistudio.google.com/apikey>
+supabase secrets set GEMINI_MODEL=gemini-2.5-flash   # opcional; es el valor por defecto
+supabase functions deploy leer-hoja
+```
+
+La función exige un JWT válido (verificación de Supabase y `auth.getUser`) y lee la foto con la sesión de quien llama, así que aplican las políticas de Storage (solo `authenticated`).
+
+### Probar la lectura
+
+```sh
+GEMINI_API_KEY=<llave> npm run leer-hoja -- public/demo/hojas/hoja-1.jpg   # lectura real desde la terminal
+VITE_LECTOR_SIMULADO=true npm run build && npm run preview                 # demo sin servidor ni llave
+```
+
+`public/demo/hojas/` tiene dos hojas ficticias llenadas «a mano» (`scripts/generar-hojas-demo.py`). Con `VITE_LECTOR_SIMULADO=true` y sin Supabase, la app usa un lector simulado (`src/hojas/servicioSimulado.ts`) con la misma interfaz que el real. Contra Supabase local: `supabase start` y `supabase functions serve leer-hoja --env-file <archivo con GEMINI_API_KEY>`.
+
 ## Estructura
 
 - `src/db/schema.ts`: tipos y tablas locales.
 - `src/db/repo.ts`: escrituras (con cola de salida).
 - `src/db/seed.ts`: datos ficticios.
 - `src/sync/`: sincronización (tablas, motor, programador de reintentos, cliente Supabase).
+- `src/hojas/`: hojas en papel (captura, cola de lectura, campos a leer, visor de foto).
+- `supabase/functions/`: Edge Function `leer-hoja` y módulo compartido de lectura.
 - `src/cuenta/`: configuración, cliente Supabase y cuenta de la médica.
 - `supabase/migrations/`: esquema del servidor con RLS.
 - `src/lib/normalize.ts`: normalización de nombres y teléfonos para búsqueda.
@@ -95,5 +126,5 @@ Sin esas variables la prueba de integración se omite; `npm test` cubre la sincr
 3. Cuenta del médico y sincronización con Supabase: inicio de sesión, envío de la cola de salida y descarga en segundo plano sin bloquear el uso (hecha).
 4. Preparación de brigada: aviso para abrir la app y descargar los datos antes de salir, con estado visible de la última descarga.
 5. Historial entre visitas: antecedentes (personales y familiares, incluido cáncer) y atención recibida fuera de EIRA desde la última consulta (hecha).
-6. Lectura de hojas en papel con revisión humana.
+6. Lectura de hojas en papel con revisión humana (hecha).
 7. PIN, respaldo y demo.
