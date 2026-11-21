@@ -27,6 +27,8 @@ export const FORM_VACIO: FormPaciente = {
 
 export type ErroresPaciente = Partial<Record<keyof FormPaciente, string>>
 
+/** 10 dígitos, opcionalmente con lada de país 52 (o 521, formato anterior para celulares). */
+const CELULAR = /^(521?)?\d{10}$/
 const CURP = /^[A-Z][AEIOUX][A-Z]{2}\d{6}[HMX][A-Z]{5}[A-Z\d]\d$/
 
 export function validarPaciente(
@@ -44,7 +46,7 @@ export function validarPaciente(
     else if (edad < 0) errores.fechaNacimiento = 'La fecha no puede ser futura.'
     else if (edad > 120) errores.fechaNacimiento = 'Revisa el año.'
   }
-  if (f.celular.trim() && normalizarTelefono(f.celular).length !== 10) {
+  if (f.celular.trim() && !CELULAR.test(f.celular.replace(/\D/g, ''))) {
     errores.celular = 'El celular debe tener 10 dígitos.'
   }
   if (f.curp.trim() && !CURP.test(f.curp.trim().toUpperCase())) {
