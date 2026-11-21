@@ -177,6 +177,32 @@ describe('descarga', () => {
     expect(await otro.colaSalida.count()).toBe(0)
   })
 
+  it('pasa antecedentes y atención externa de un dispositivo a otro', async () => {
+    const otro = crearDB(`sync-${n++}`)
+    const repo = crearRepo(db)
+    const p = await repo.crearPaciente(ana)
+    const antecedente = await repo.crearAntecedente({
+      pacienteId: p.id,
+      ambito: 'familiar',
+      parentesco: 'madre',
+      tipo: 'cancer',
+      descripcion: 'Cáncer de mama',
+    })
+    const atencion = await repo.crearAtencionExterna({
+      pacienteId: p.id,
+      tipo: 'consulta',
+      especialidad: 'Nutrición',
+      fecha: '2026-08-01',
+      fechaAproximada: true,
+      resumen: 'Plan de alimentación',
+    })
+    await crearMotor(servidor.remoto, db).subir()
+
+    expect(await crearMotor(servidor.remoto, otro).descargar()).toBe(3)
+    expect(await otro.antecedentes.get(antecedente.id)).toEqual(antecedente)
+    expect(await otro.atencionesExternas.get(atencion.id)).toEqual(atencion)
+  })
+
   it('con el cursor solo pide lo nuevo, por páginas', async () => {
     for (let i = 0; i < 5; i++)
       servidor.escribir('brigadas', {
