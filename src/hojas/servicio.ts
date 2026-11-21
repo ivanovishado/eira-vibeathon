@@ -5,6 +5,7 @@ import {
   type ResultadoLectura,
 } from '../../supabase/functions/_shared/lecturaHoja.ts'
 import { limitePropio, obtenerCliente } from '../cuenta/cliente'
+import { TITULOS_HOJA } from './campos'
 import { ErrorSincronizacion } from '../sync/remoto'
 
 export const BUCKET_HOJAS = 'hojas'
@@ -79,7 +80,10 @@ export function crearServicioSupabase(
       const cliente = await conSesion()
       const { data, error } = await cliente.functions.invoke<ResultadoLectura>(
         'leer-hoja',
-        { body: { ruta, campos }, signal: limitePropio(LIMITE_LECTURA_MS) },
+        {
+          body: { ruta, campos, titulos: TITULOS_HOJA },
+          signal: limitePropio(LIMITE_LECTURA_MS),
+        },
       )
       if (error) {
         const respuesta = (error as { context?: Response }).context

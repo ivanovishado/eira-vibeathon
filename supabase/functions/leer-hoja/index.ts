@@ -8,6 +8,7 @@ import {
   ErrorLectura,
   LIMITE_LECTOR_MS,
   validarCampos,
+  validarTitulos,
 } from '../_shared/lecturaHoja.ts'
 import { elegirLector, leerHoja } from '../_shared/lectores.ts'
 
@@ -51,10 +52,12 @@ Deno.serve(async (req) => {
     const cuerpo = (await req.json().catch(() => ({}))) as {
       ruta?: unknown
       campos?: unknown
+      titulos?: unknown
     }
     if (typeof cuerpo.ruta !== 'string' || !RUTA_VALIDA.test(cuerpo.ruta))
       throw new ErrorLectura('peticion', 'Ruta de foto no válida.')
     const campos = validarCampos(cuerpo.campos)
+    const titulos = validarTitulos(cuerpo.titulos)
 
     // Con la sesión de quien llama: las políticas de Storage deciden si puede leerla.
     const { data: foto, error: errorFoto } = await supabase.storage
@@ -80,6 +83,7 @@ Deno.serve(async (req) => {
       entorno,
       {
         campos,
+        titulos,
         imagen: new Uint8Array(await foto.arrayBuffer()),
         tipoImagen: foto.type || 'image/jpeg',
         signal: AbortSignal.timeout(LIMITE_LECTOR_MS),

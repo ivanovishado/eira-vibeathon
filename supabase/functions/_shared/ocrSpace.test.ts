@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { CAMPOS_LECTURA } from '../../../src/hojas/campos'
+import { CAMPOS_LECTURA, TITULOS_HOJA } from '../../../src/hojas/campos'
 import { ErrorLectura } from './lecturaHoja'
 import { elegirLector, leerHoja } from './lectores'
 import {
@@ -75,6 +75,29 @@ describe('OCR.space con respuestas grabadas', () => {
         'consulta.antecedentes',
       ]),
     )
+  })
+
+  it('el formato varía entre llamadas: mismo resultado con otro orden y sin Markdown', () => {
+    const original = analizarRespuestaOcrSpace(hoja2, CAMPOS_LECTURA, 'ocr')
+    const texto: string = hoja2.ParsedResults[0].ParsedText
+    const bloques = texto.split(/\n(?=## )/)
+    const variado = {
+      ...hoja2,
+      ParsedResults: [
+        {
+          ...hoja2.ParsedResults[0],
+          ParsedText: [...bloques].reverse().join('\n').replace(/^#+ /gm, ''),
+        },
+      ],
+    }
+    const l = analizarRespuestaOcrSpace(
+      variado,
+      CAMPOS_LECTURA,
+      'ocr',
+      TITULOS_HOJA,
+    )
+    expect(l.valores).toEqual(original.valores)
+    expect(new Set(l.dudosos)).toEqual(new Set(original.dudosos))
   })
 
   it('manda la foto con la llave en el encabezado y Engine 3', async () => {

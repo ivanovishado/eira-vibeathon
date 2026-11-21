@@ -116,6 +116,7 @@ export function analizarRespuestaOcrSpace(
   respuesta: unknown,
   campos: CampoLectura[],
   modelo: string,
+  titulos: string[] = [],
 ): ResultadoLectura {
   const r = respuesta as RespuestaOcrSpace
   if (!r || typeof r !== 'object')
@@ -161,7 +162,7 @@ export function analizarRespuestaOcrSpace(
       'modelo',
       'No se encontró texto en la foto; revisa que la hoja se vea completa y enfocada.',
     )
-  const lectura = analizarTextoHoja(textoHoja, campos, modelo)
+  const lectura = analizarTextoHoja(textoHoja, campos, modelo, titulos)
   if (
     lectura.dudosos.length === campos.length &&
     !Object.keys(lectura.valores).length
@@ -176,6 +177,8 @@ export function analizarRespuestaOcrSpace(
 export interface OpcionesOcrSpace {
   apiKey: string
   campos: CampoLectura[]
+  /** Títulos de sección impresos en la hoja (no son valores). */
+  titulos?: string[]
   imagen: Uint8Array
   tipoImagen: string
   motor?: string
@@ -207,6 +210,7 @@ const EXTENSION: Record<string, string> = {
 export async function leerHojaConOcrSpace({
   apiKey,
   campos,
+  titulos = [],
   imagen,
   tipoImagen,
   motor = MOTOR_POR_DEFECTO,
@@ -273,7 +277,7 @@ export async function leerHojaConOcrSpace({
         )
       }
       alResponder?.(datos)
-      return analizarRespuestaOcrSpace(datos, campos, modelo)
+      return analizarRespuestaOcrSpace(datos, campos, modelo, titulos)
     } catch (e) {
       if (
         e instanceof FallaOcrSpace &&

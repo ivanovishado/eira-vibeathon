@@ -32,6 +32,8 @@ export function elegirLector(entorno: Entorno): Lector {
 
 export interface PeticionLectura {
   campos: CampoLectura[]
+  /** Títulos de sección impresos; solo los usa el lector de texto (OCR.space). */
+  titulos?: string[]
   imagen: Uint8Array
   tipoImagen: string
   signal?: AbortSignal
@@ -55,7 +57,7 @@ export async function leerHoja(
   lector: Lector = elegirLector(entorno),
 ): Promise<ResultadoLectura> {
   if (lector === 'gemini') {
-    const { alResponder: _, ...resto } = peticion
+    const { alResponder: _, titulos: __, ...resto } = peticion
     return leerHojaConGemini({
       ...resto,
       apiKey: llave(entorno, 'GEMINI_API_KEY'),

@@ -5,6 +5,7 @@ import type {
 import type { LecturaHoja } from '../db/schema'
 import {
   CAMPOS_CONSULTA,
+  SECCIONES,
   errorDeCampo,
   type IdCampo,
 } from '../expediente/formulario'
@@ -42,6 +43,15 @@ export const CAMPOS_LECTURA: CampoLectura[] = [
     ...(c.patron && c.placeholder ? { ayuda: `como ${c.placeholder}` } : {}),
     enHoja: c.enHoja ?? [c.etiqueta],
   })),
+]
+
+/**
+ * Títulos de sección impresos en la hoja: el lector OCR no los toma como valor de
+ * un campo vacío. Las secciones de consulta salen del formulario.
+ */
+export const TITULOS_HOJA: string[] = [
+  'Datos de la paciente',
+  ...SECCIONES.map((s) => s.titulo),
 ]
 
 export type MarcaLectura = 'dudoso' | 'ilegible'

@@ -168,12 +168,24 @@ function aplanarTablas(lineas: string[], etiquetas: Etiqueta[]): string[] {
   return salida
 }
 
-/** Valores en texto por campo, como aparecen en la hoja; `encontrados` = etiquetas vistas. */
+/**
+ * Valores en texto por campo, como aparecen en la hoja; `encontrados` = etiquetas
+ * vistas. `titulos`: títulos de sección impresos ("Signos vitales"), que nunca son
+ * valor aunque el OCR los devuelva sin `#`.
+ */
 export function ubicarValores(
   texto: string,
   campos: CampoLectura[],
+  titulos: string[] = [],
 ): { valores: Map<number, string>; encontrados: Set<number> } {
   const etiquetas = etiquetasDe(campos)
+  const deTitulos = titulos
+    .map((t) => palabrasEtiqueta(t))
+    .filter((p) => p.length > 0)
+  const esTitulo = (linea: string) => {
+    const leidas = palabrasEtiqueta(linea)
+    return deTitulos.some((t) => coincide(leidas, t))
+  }
   const lineas = aplanarTablas(texto.replace(/\r/g, '').split('\n'), etiquetas)
   const valores = new Map<number, string>()
   const encontrados = new Set<number>()
@@ -209,7 +221,7 @@ export function ubicarValores(
       }
       continue
     }
-    if (titulo) {
+    if (titulo || esTitulo(linea)) {
       cerrar()
       continue
     }
@@ -230,8 +242,9 @@ export function analizarTextoHoja(
   texto: string,
   campos: CampoLectura[],
   modelo: string,
+  titulos: string[] = [],
 ): ResultadoLectura {
-  const { valores: crudos, encontrados } = ubicarValores(texto, campos)
+  const { valores: crudos, encontrados } = ubicarValores(texto, campos, titulos)
   const valores: Record<string, string> = {}
   const dudosos: string[] = []
   campos.forEach((c, i) => {

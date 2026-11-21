@@ -241,6 +241,18 @@ export function normalizarNumero(
   }
 }
 
+/** Títulos de sección que manda el cliente: lista corta de textos cortos. */
+export function validarTitulos(titulos: unknown): string[] {
+  if (titulos === undefined) return []
+  if (
+    !Array.isArray(titulos) ||
+    titulos.length > 20 ||
+    titulos.some((t) => typeof t !== 'string' || t.length > 100)
+  )
+    throw new ErrorLectura('peticion', 'Títulos de la hoja no válidos.')
+  return titulos.map((t: string) => t.trim()).filter(Boolean)
+}
+
 /**
  * Convierte el JSON del modelo en valores por campo. Lo ilegible o vacío queda sin
  * valor; lo que no tiene el formato esperado se descarta y se marca dudoso.

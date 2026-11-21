@@ -12,7 +12,7 @@ import {
   leerHoja,
   LECTORES,
 } from '../supabase/functions/_shared/lectores.ts'
-import { CAMPOS_LECTURA } from '../src/hojas/campos.ts'
+import { CAMPOS_LECTURA, TITULOS_HOJA } from '../src/hojas/campos.ts'
 
 const TIPOS: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -49,6 +49,7 @@ try {
     entorno,
     {
       campos: CAMPOS_LECTURA,
+      titulos: TITULOS_HOJA,
       imagen: new Uint8Array(await readFile(ruta)),
       tipoImagen,
       alResponder: values.crudo
