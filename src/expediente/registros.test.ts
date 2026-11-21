@@ -137,6 +137,33 @@ describe('antecedentes', () => {
     expect(await db.antecedentes.count()).toBe(2)
   })
 
+  it('no acepta corregir una versión que ya se corrigió o se quitó', async () => {
+    const original = await guardarRegistro(
+      'antecedente',
+      pacienteId,
+      cancerMadre,
+      {},
+      db,
+    )
+    await guardarRegistro(
+      'antecedente',
+      pacienteId,
+      {},
+      { corrigeA: original.id, retirar: true },
+      db,
+    )
+    await expect(
+      guardarRegistro(
+        'antecedente',
+        pacienteId,
+        { ...cancerMadre, cuando: '2016' },
+        { corrigeA: original.id },
+        db,
+      ),
+    ).rejects.toThrow('ya se corrigió o se quitó')
+    expect(await db.antecedentes.count()).toBe(2)
+  })
+
   it('no corrige registros de otra paciente', async () => {
     const otra = await crearRepo(db).crearPaciente({
       nombres: 'Otra',

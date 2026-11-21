@@ -165,6 +165,17 @@ export async function guardarRegistro(
         original?.pacienteId !== pacienteId
       )
         throw new Error('El registro a corregir no es de esta paciente')
+      if (
+        opciones.corrigeA &&
+        (await tabla
+          .where('pacienteId')
+          .equals(pacienteId)
+          .filter((r) => r.corrigeA === opciones.corrigeA)
+          .count())
+      )
+        throw new Error(
+          'Este registro ya se corrigió o se quitó en otra captura. Vuelve al expediente para ver la versión actual.',
+        )
       const datos = opciones.retirar
         ? { ...sinMeta(original!), retirado: true }
         : {
