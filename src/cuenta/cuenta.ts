@@ -36,6 +36,13 @@ function guardar(cuenta: Cuenta | undefined) {
 
 export const leerCuenta = () => actual
 
+// Otra pestaña inició o cerró sesión.
+window.addEventListener('storage', (e) => {
+  if (e.key !== CLAVE && e.key !== null) return
+  actual = leerGuardada()
+  oyentes.forEach((o) => o())
+})
+
 export function suscribirCuenta(oyente: () => void) {
   oyentes.add(oyente)
   return () => {
