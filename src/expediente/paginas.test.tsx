@@ -14,7 +14,9 @@ import { db } from '../db/schema'
 import { borrarDatosLocales } from '../db/seed'
 import { Expediente } from '../pages/Expediente'
 import { NuevaConsulta } from '../pages/NuevaConsulta'
+import { RegistroHistorial } from '../pages/RegistroHistorial'
 import { claveBorrador } from './captura'
+import { haceCuanto, hoyLocal } from './fechas'
 import { ESPERA_BORRADOR_MS } from './useCapturaConsulta'
 
 function abrir(ruta: string) {
@@ -26,6 +28,14 @@ function abrir(ruta: string) {
         <Route
           path="/pacientes/:pacienteId/consultas/nueva"
           element={<NuevaConsulta />}
+        />
+        <Route
+          path="/pacientes/:pacienteId/antecedentes/nuevo"
+          element={<RegistroHistorial clase="antecedente" />}
+        />
+        <Route
+          path="/pacientes/:pacienteId/atencion-externa/nuevo"
+          element={<RegistroHistorial clase="externa" />}
         />
       </Routes>
     </MemoryRouter>,
@@ -196,5 +206,118 @@ describe('nueva consulta', () => {
   it('avisa si la consulta a corregir no es de la paciente', async () => {
     abrir(`/pacientes/${pacienteId}/consultas/nueva?corrige=otra`)
     expect(await screen.findByText('Consulta no encontrada')).toBeVisible()
+  })
+})
+
+describe('historial entre visitas', () => {
+  it('muestra antecedentes y la atención externa en la línea de tiempo', async () => {
+    await repo.crearConsulta({
+      pacienteId,
+      fecha: '2026-02-10',
+      medico: 'Dra. B',
+      motivo: 'Tamizaje de rutina',
+    })
+    await repo.crearAntecedente({
+      pacienteId,
+      ambito: 'familiar',
+      parentesco: 'Madre',
+      tipo: 'cancer',
+      descripcion: 'Mama',
+      cuando: '2015',
+    })
+    await repo.crearAtencionExterna({
+      pacienteId,
+      tipo: 'consulta',
+      especialidad: 'Nutrición',
+      fecha: '2026-05-15',
+      fechaAproximada: true,
+      resumen: 'Plan de alimentación',
+    })
+    abrir(`/pacientes/${pacienteId}`)
+
+    const antecedentes = await screen.findByRole('region', {
+      name: 'Antecedentes',
+    })
+    expect(antecedentes).toHaveTextContent('Madre')
+    expect(antecedentes).toHaveTextContent('Mama')
+    const [externa, consulta] = screen.getAllByRole('article')
+    expect(externa).toHaveTextContent('Fuera de EIRA')
+    expect(externa).toHaveTextContent('Nutrición')
+    expect(externa).toHaveTextContent('aprox. may 2026')
+    expect(consulta).toHaveTextContent('Tamizaje de rutina')
+    expect(
+      screen.getByText('Fuera de EIRA desde la última consulta'),
+    ).toBeVisible()
+  })
+
+  it('agrega un antecedente y su corrección conserva el rastro', async () => {
+    abrir(`/pacientes/${pacienteId}`)
+    fireEvent.click(
+      await screen.findByRole('link', { name: '+ Cáncer en la familia' }),
+    )
+    await screen.findByRole('heading', { name: 'Agregar antecedente' })
+    expect(screen.getByRole('radio', { name: 'De un familiar' })).toBeChecked()
+    escribir(/Familiar/, 'Abuela materna')
+    escribir(/Tipo de cáncer/, 'Ovario')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(
+      await screen.findByText('Antecedente guardado en este dispositivo.'),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('link', { name: /Corregir.*Ovario/ }))
+    await screen.findByRole('heading', { name: 'Corregir antecedente' })
+    escribir(/Cuándo/, 'a los 60 años')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await screen.findByText('Antecedente guardado en este dispositivo.')
+    expect(
+      screen.getByRole('region', { name: 'Antecedentes' }),
+    ).toHaveTextContent('a los 60 años')
+    expect(screen.getByText(/Historial de cambios \(2\)/)).toBeInTheDocument()
+    expect(await db.antecedentes.count()).toBe(2)
+  })
+
+  it('la consulta nueva muestra cuánto pasó y registra lo de fuera de EIRA', async () => {
+    await repo.crearConsulta({
+      pacienteId,
+      fecha: '2026-02-10',
+      medico: 'Dra. B',
+      motivo: 'Tamizaje de rutina',
+    })
+    abrir(`/pacientes/${pacienteId}/consultas/nueva`)
+    const seccion = await screen.findByRole('group', {
+      name: 'Desde la última visita',
+    })
+    expect(
+      await within(seccion).findByText(haceCuanto('2026-02-10', hoyLocal())),
+    ).toBeVisible()
+
+    escribir(/Médica o médico/, 'Dra. Prueba')
+    escribir(/Motivo de consulta/, 'Seguimiento')
+    fireEvent.click(within(seccion).getByRole('button', { name: '+ Consulta' }))
+    fireEvent.change(within(seccion).getByLabelText(/Especialidad/), {
+      target: { value: 'Nutrición' },
+    })
+    fireEvent.change(within(seccion).getByLabelText(/^Fecha/), {
+      target: { value: '2026-06-01' },
+    })
+    fireEvent.change(within(seccion).getByLabelText(/Resumen/), {
+      target: { value: 'Plan de alimentación' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar consulta' }))
+
+    await screen.findByText('Consulta guardada en este dispositivo.')
+    const tarjetas = screen.getAllByRole('article')
+    expect(tarjetas[0]).toHaveTextContent('Seguimiento')
+    expect(tarjetas[1]).toHaveTextContent('Fuera de EIRA')
+    expect(tarjetas[1]).toHaveTextContent('Plan de alimentación')
+    expect(await db.atencionesExternas.count()).toBe(1)
+  })
+
+  it('en la primera consulta invita a preguntar por atención previa', async () => {
+    abrir(`/pacientes/${pacienteId}/consultas/nueva`)
+    expect(
+      await screen.findByText('Es su primera consulta en EIRA.'),
+    ).toBeVisible()
   })
 })

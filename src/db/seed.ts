@@ -3,6 +3,8 @@ import { nombreCompleto } from './repo'
 import {
   db as dbPorDefecto,
   TIPOS_ESTUDIO,
+  type Antecedente,
+  type AtencionExterna,
   type Brigada,
   type Consulta,
   type EiraDB,
@@ -102,6 +104,69 @@ const MOTIVOS = [
   'Orientación nutricional',
 ]
 
+const PARENTESCOS = [
+  'Madre',
+  'Hermana',
+  'Abuela materna',
+  'Tía paterna',
+  'Prima',
+]
+const CANCERES = ['Mama', 'Cervicouterino', 'Ovario', 'Endometrio', 'Colon']
+const OTROS_ANTECEDENTES: Pick<Antecedente, 'tipo' | 'descripcion'>[] = [
+  { tipo: 'cronica', descripcion: 'Diabetes tipo 2' },
+  { tipo: 'cronica', descripcion: 'Hipertensión arterial' },
+  { tipo: 'ginecoobstetrico', descripcion: '3 embarazos, 2 partos, 1 cesárea' },
+  { tipo: 'quirurgico', descripcion: 'Colecistectomía' },
+  { tipo: 'alergia', descripcion: 'Penicilina' },
+]
+const ATENCIONES: Pick<
+  AtencionExterna,
+  'tipo' | 'especialidad' | 'lugar' | 'resumen'
+>[] = [
+  {
+    tipo: 'consulta',
+    especialidad: 'Nutrición',
+    lugar: 'Centro de Salud (dato ficticio)',
+    resumen: 'Plan de alimentación para bajar de peso. Dato ficticio.',
+  },
+  {
+    tipo: 'consulta',
+    especialidad: 'Ginecología',
+    lugar: 'Hospital regional (dato ficticio)',
+    resumen: 'Revisión por flujo; le indicaron óvulos. Dato ficticio.',
+  },
+  {
+    tipo: 'estudio',
+    especialidad: 'Radiología',
+    lugar: 'Laboratorio particular (dato ficticio)',
+    resumen: 'Ultrasonido pélvico sin alteraciones. Dato ficticio.',
+  },
+  {
+    tipo: 'diagnostico',
+    especialidad: 'Medicina general',
+    lugar: 'Consultorio de farmacia (dato ficticio)',
+    resumen: 'Le diagnosticaron hipertensión. Dato ficticio.',
+  },
+  {
+    tipo: 'tratamiento',
+    lugar: 'Centro de Salud (dato ficticio)',
+    resumen: 'Toma metformina desde hace unos meses. Dato ficticio.',
+  },
+  {
+    tipo: 'hospitalizacion',
+    especialidad: 'Cirugía',
+    lugar: 'Hospital general (dato ficticio)',
+    resumen: 'Operada de la vesícula, 3 días internada. Dato ficticio.',
+  },
+]
+/** Fecha tope de los datos ficticios, para que sean repetibles. */
+const FECHA_TOPE = '2026-11-01'
+
+const sumarDias = (fecha: string, dias: number) =>
+  new Date(Date.parse(`${fecha}T00:00:00Z`) + dias * 86_400_000)
+    .toISOString()
+    .slice(0, 10)
+
 /** PRNG determinista (mulberry32) para que los datos de prueba sean repetibles. */
 function prng(semilla: number) {
   let a = semilla
@@ -118,6 +183,8 @@ export interface DatosFicticios {
   brigadas: Brigada[]
   consultas: Consulta[]
   estudios: Estudio[]
+  antecedentes: Antecedente[]
+  atencionesExternas: AtencionExterna[]
 }
 
 export function generarDatosFicticios(
@@ -147,8 +214,11 @@ export function generarDatosFicticios(
   const pacientes: Paciente[] = []
   const consultas: Consulta[] = []
   const estudios: Estudio[] = []
+  const antecedentes: Antecedente[] = []
+  const atencionesExternas: AtencionExterna[] = []
 
   for (let i = 0; i < cantidad; i++) {
+    const primeraConsulta = consultas.length
     const [comunidad, municipio] = elegir(LUGARES)
     const base = {
       nombres: elegir(NOMBRES),
@@ -213,8 +283,82 @@ export function generarDatosFicticios(
         })
       }
     }
+
+    // Antecedentes: cáncer en la familia es lo más frecuente en el tamizaje de EIRA.
+    if (r() < 0.3) {
+      const original: Antecedente = {
+        id: id(),
+        pacienteId: paciente.id,
+        ambito: 'familiar',
+        parentesco: elegir(PARENTESCOS),
+        tipo: 'cancer',
+        descripcion: elegir(CANCERES),
+        cuando: `${entero(1995, 2025)}`,
+        createdAt: creado,
+      }
+      antecedentes.push(original)
+      // A veces se corrigió después (ejemplo de rastro de cambios).
+      if (r() < 0.2)
+        antecedentes.push({
+          ...original,
+          id: id(),
+          corrigeA: original.id,
+          cuando: `a los ${entero(40, 70)} años`,
+          notas: 'La paciente confirmó la edad con su familia. Dato ficticio.',
+          createdAt: '2026-03-01T00:00:00.000Z',
+        })
+    }
+    if (r() < 0.05)
+      antecedentes.push({
+        id: id(),
+        pacienteId: paciente.id,
+        ambito: 'personal',
+        tipo: 'cancer',
+        descripcion: elegir(CANCERES),
+        cuando: `${entero(2010, 2024)}`,
+        notas: 'En vigilancia. Dato ficticio.',
+        createdAt: creado,
+      })
+    if (r() < 0.35)
+      antecedentes.push({
+        id: id(),
+        pacienteId: paciente.id,
+        ambito: r() < 0.7 ? 'personal' : 'familiar',
+        ...elegir(OTROS_ANTECEDENTES),
+        createdAt: creado,
+      })
+
+    // Atención fuera de EIRA después de su última consulta.
+    const ultima = consultas
+      .slice(primeraConsulta)
+      .reduce<string | undefined>(
+        (max, c) => (!max || c.fecha > max ? c.fecha : max),
+        undefined,
+      )
+    if (ultima && r() < 0.4) {
+      const veces = entero(1, 2)
+      for (let k = 0; k < veces; k++) {
+        const fecha = sumarDias(ultima, entero(20, 200))
+        if (fecha > FECHA_TOPE) continue
+        atencionesExternas.push({
+          id: id(),
+          pacienteId: paciente.id,
+          ...elegir(ATENCIONES),
+          fecha,
+          fechaAproximada: r() < 0.5 || undefined,
+          createdAt: creado,
+        })
+      }
+    }
   }
-  return { pacientes, brigadas, consultas, estudios }
+  return {
+    pacientes,
+    brigadas,
+    consultas,
+    estudios,
+    antecedentes,
+    atencionesExternas,
+  }
 }
 
 const TABLAS = [
@@ -224,6 +368,8 @@ const TABLAS = [
   'estudios',
   'colaSalida',
   'borradores',
+  'antecedentes',
+  'atencionesExternas',
 ] as const
 
 export async function borrarDatosLocales(
@@ -247,12 +393,21 @@ export async function cargarDatosFicticios(
   await borrarDatosLocales(db)
   await db.transaction(
     'rw',
-    [db.pacientes, db.brigadas, db.consultas, db.estudios],
+    [
+      db.pacientes,
+      db.brigadas,
+      db.consultas,
+      db.estudios,
+      db.antecedentes,
+      db.atencionesExternas,
+    ],
     async () => {
       await db.pacientes.bulkAdd(datos.pacientes)
       await db.brigadas.bulkAdd(datos.brigadas)
       await db.consultas.bulkAdd(datos.consultas)
       await db.estudios.bulkAdd(datos.estudios)
+      await db.antecedentes.bulkAdd(datos.antecedentes)
+      await db.atencionesExternas.bulkAdd(datos.atencionesExternas)
     },
   )
   return datos

@@ -24,6 +24,19 @@ export function formatearFecha(fecha: string): string {
   return formato.format(new Date(Date.UTC(a, m - 1, d))).replace('.', '')
 }
 
+const formatoMes = new Intl.DateTimeFormat('es-MX', {
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+/** "2025-03-14" → "mar 2025". */
+export function formatearMes(fecha: string): string {
+  const [a, m] = partes(fecha)
+  if (!a || !m) return fecha
+  return formatoMes.format(new Date(Date.UTC(a, m - 1, 1))).replace('.', '')
+}
+
 /** Años cumplidos a la fecha `hoy` (ambas YYYY-MM-DD). */
 export function edad(fechaNacimiento: string, hoy = hoyLocal()): number {
   const [an, mn, dn] = partes(fechaNacimiento)
