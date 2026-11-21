@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Consulta, Estudio } from '../db/schema'
-import { construirHistorial, resumirHistorial } from './historial'
+import { claveEntrada, construirHistorial, resumirHistorial } from './historial'
 
 const consulta = (
   id: string,
@@ -48,9 +48,7 @@ describe('construirHistorial', () => {
         },
       ],
     )
-    expect(
-      h.map((e) => (e.tipo === 'consulta' ? e.consulta.id : e.estudio.id)),
-    ).toEqual(['b', 'e2', 'a'])
+    expect(h.map(claveEntrada)).toEqual(['b', 'e2', 'a'])
     const a = h[2]
     expect(a.tipo === 'consulta' && a.estudios.map((e) => e.id)).toEqual(['e1'])
   })
@@ -114,6 +112,7 @@ describe('resumirHistorial', () => {
       totalConsultas: 0,
       ultimaConsulta: undefined,
       ultimosEstudios: [],
+      externasDesdeUltima: [],
     })
   })
 })

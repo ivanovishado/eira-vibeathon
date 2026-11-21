@@ -9,6 +9,7 @@ expedientes de pacientes sin conexión, y sincronice cuando haya wifi.
 - El service worker precarga la app: después de la primera visita abre sin conexión y se puede instalar.
 - Cada escritura clínica pasa por `src/db/repo.ts`, que guarda el registro y lo anota en la cola de salida (`colaSalida`) en la misma transacción. La sincronización (fase 3) vacía esa cola.
 - Las consultas no se editan; una corrección es una consulta nueva con `corrigeA`.
+- Antecedentes y atención recibida fuera de EIRA siguen la misma regla: corregir o quitar agrega una versión (`corrigeA`, `retirado`) y el expediente muestra el rastro de cambios. Sus campos son provisionales y se ajustan en `src/expediente/antecedentes.ts` y `src/expediente/atencionExterna.ts`.
 
 ## Desarrollo
 
@@ -42,4 +43,5 @@ En **Ajustes** se pueden cargar 2,000 pacientes ficticias para desarrollo y demo
 2. Expediente y captura de consulta.
 3. Sincronización con Supabase.
 4. Lectura de hojas en papel con revisión humana.
-5. PIN, respaldo y demo.
+5. Historial entre visitas: antecedentes y atención fuera de EIRA.
+6. PIN, respaldo y demo.

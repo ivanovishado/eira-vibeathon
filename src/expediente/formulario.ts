@@ -6,7 +6,9 @@ import type {
   TipoEstudio,
 } from '../db/schema'
 import { TIPOS_ESTUDIO } from '../db/schema'
+import { esValores, validarRegistro, type Valores } from './camposRegistro'
 import { hoyLocal } from './fechas'
+import { REGISTROS, type ClaseRegistro } from './registros'
 
 /**
  * Campos del formulario de consulta. Son provisionales mientras no tengamos la hoja en
@@ -156,14 +158,32 @@ export interface EstudioCaptura {
   resultado: string
 }
 
+/** Antecedente o atención externa capturada dentro de la consulta. */
+export interface FilaRegistro {
+  clave: string
+  valores: Valores
+}
+
 /** Lo que el médico lleva capturado; es también lo que se guarda como borrador. */
 export interface CapturaConsulta {
   valores: Partial<Record<IdCampo, string>>
   estudios: EstudioCaptura[]
+  /** Lo que pasó desde la última visita (opcional en borradores anteriores). */
+  externas?: FilaRegistro[]
+  antecedentes?: FilaRegistro[]
   corrigeA?: string
 }
 
-export type Errores = Partial<Record<IdCampo | `estudio.${string}`, string>>
+/** Las filas de registros se identifican como `externa.<clave>.<campo>`. */
+export type Errores = Partial<
+  Record<IdCampo | `estudio.${string}` | `${ClaseRegistro}.${string}`, string>
+>
+
+/** Filas de antecedentes y atención externa, por clase. */
+export const FILAS_CAPTURA = {
+  externa: 'externas',
+  antecedente: 'antecedentes',
+} as const satisfies Record<ClaseRegistro, keyof CapturaConsulta>
 
 export function capturaVacia(
   recordados: Partial<Record<IdCampo, string>> = {},
@@ -180,6 +200,10 @@ export function nuevoEstudio(tipo: TipoEstudio): EstudioCaptura {
     fecha: '',
     resultado: '',
   }
+}
+
+export function nuevaFila(valores: Valores = {}): FilaRegistro {
+  return { clave: `r${Date.now()}-${contador++}`, valores }
 }
 
 function leer(c: CapturaConsulta, id: IdCampo) {
@@ -215,6 +239,12 @@ export function validarCaptura(c: CapturaConsulta): Errores {
     else if (e.fecha && !/^\d{4}-\d{2}-\d{2}$/.test(e.fecha))
       errores[`estudio.${e.clave}`] = 'Fecha no válida.'
   }
+  for (const clase of ['externa', 'antecedente'] as const)
+    for (const fila of c[FILAS_CAPTURA[clase]] ?? [])
+      for (const [campo, error] of Object.entries(
+        validarRegistro(REGISTROS[clase].campos, fila.valores),
+      ))
+        errores[`${clase}.${fila.clave}.${campo}`] = error
   return errores
 }
 
@@ -309,6 +339,14 @@ export function esCaptura(datos: unknown): datos is CapturaConsulta {
         typeof e.fecha === 'string' &&
         typeof e.resultado === 'string' &&
         TIPOS_ESTUDIO.includes(e.tipo),
+    ) &&
+    [d.externas, d.antecedentes].every(
+      (filas) =>
+        filas === undefined ||
+        (Array.isArray(filas) &&
+          filas.every(
+            (f) => f && typeof f.clave === 'string' && esValores(f.valores),
+          )),
     )
   )
 }

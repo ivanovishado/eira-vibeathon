@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { nombreCompleto } from '../db/repo'
 import { db, TIPOS_ESTUDIO, type TipoEstudio } from '../db/schema'
 import { registrarConsulta } from '../expediente/captura'
 import { CampoFormulario } from '../expediente/CampoFormulario'
+import { DesdeUltimaVisita } from '../expediente/DesdeUltimaVisita'
 import { formatearFecha } from '../expediente/fechas'
 import {
   CAMPOS_CONSULTA,
@@ -166,28 +167,35 @@ export function NuevaConsulta() {
       )}
 
       {SECCIONES.map((s) => (
-        <fieldset
-          key={s.id}
-          className="rounded-xl border border-slate-200 bg-white p-4"
-        >
-          <legend className="px-1 text-sm font-semibold text-slate-800">
-            {s.titulo}
-          </legend>
-          <div
-            className={`grid gap-3 ${s.id === 'signos' ? 'grid-cols-2 sm:grid-cols-3' : 'sm:grid-cols-2'}`}
-          >
-            {CAMPOS_CONSULTA.filter((c) => c.seccion === s.id).map((c) => (
-              <CampoFormulario
-                key={c.id}
-                campo={c}
-                valor={captura.valores[c.id] ?? ''}
-                error={errores[c.id]}
-                brigadas={brigadas}
-                onCambio={(v) => cambiarCampo(c.id, v)}
-              />
-            ))}
-          </div>
-        </fieldset>
+        <Fragment key={s.id}>
+          <fieldset className="rounded-xl border border-slate-200 bg-white p-4">
+            <legend className="px-1 text-sm font-semibold text-slate-800">
+              {s.titulo}
+            </legend>
+            <div
+              className={`grid gap-3 ${s.id === 'signos' ? 'grid-cols-2 sm:grid-cols-3' : 'sm:grid-cols-2'}`}
+            >
+              {CAMPOS_CONSULTA.filter((c) => c.seccion === s.id).map((c) => (
+                <CampoFormulario
+                  key={c.id}
+                  campo={c}
+                  valor={captura.valores[c.id] ?? ''}
+                  error={errores[c.id]}
+                  brigadas={brigadas}
+                  onCambio={(v) => cambiarCampo(c.id, v)}
+                />
+              ))}
+            </div>
+          </fieldset>
+          {s.id === 'visita' && !original && (
+            <DesdeUltimaVisita
+              pacienteId={paciente.id}
+              captura={captura}
+              errores={errores}
+              actualizar={actualizar}
+            />
+          )}
+        </Fragment>
       ))}
 
       <fieldset className="rounded-xl border border-slate-200 bg-white p-4">
