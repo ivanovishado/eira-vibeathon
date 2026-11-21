@@ -122,7 +122,7 @@ export function VisorFoto({ url, alt }: { url: string; alt: string }) {
           </div>
         )}
       </div>
-      <div className="absolute right-2 bottom-2 flex gap-1">
+      <div className="absolute right-5 bottom-5 flex gap-1">
         <button
           type="button"
           className={boton}

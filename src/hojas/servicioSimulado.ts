@@ -6,7 +6,7 @@ import type { ServicioHojas } from './servicio'
 /**
  * Servidor de lectura en memoria con la misma interfaz que el real: para pruebas y
  * para la demo sin llave de Gemini (`VITE_LECTOR_SIMULADO=true`). Devuelve una de
- * las lecturas de demo según el tamaño de la foto.
+ * las lecturas de demo por turnos (la primera hoja, la primera lectura).
  */
 export function crearServicioSimulado({
   esperaMs = 0,
@@ -38,7 +38,7 @@ export function crearServicioSimulado({
       if (!archivo)
         throw new ErrorSincronizacion('rechazo', `No existe la foto ${ruta}`)
       lecturasPedidas++
-      const lectura = lecturas[archivo.datos.byteLength % lecturas.length]
+      const lectura = lecturas[(lecturasPedidas - 1) % lecturas.length]
       return structuredClone({ ...lectura, modelo: 'simulado' })
     },
     async descargar(ruta) {
