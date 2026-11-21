@@ -6,7 +6,7 @@ interface Versionable {
 }
 
 export interface Versionado<T extends Versionable> {
-  /** Versión que vale hoy: la registrada más recientemente. */
+  /** Versión que vale hoy: la última de la cadena de correcciones. */
   vigente: T
   /** Versiones sustituidas, de la más reciente a la más antigua. */
   anteriores: T[]
@@ -23,6 +23,7 @@ export function agruparVersiones<T extends Versionable>(
   registros: T[],
 ): Versionado<T>[] {
   const porId = new Map(registros.map((r) => [r.id, r]))
+  const profundidad = new Map<string, number>()
   const raiz = (r: T) => {
     const vistos = new Set([r.id])
     let actual = r
@@ -32,6 +33,7 @@ export function agruparVersiones<T extends Versionable>(
       vistos.add(anterior.id)
       actual = anterior
     }
+    profundidad.set(r.id, vistos.size)
     return actual.id
   }
   const grupos = new Map<string, T[]>()
@@ -40,9 +42,13 @@ export function agruparVersiones<T extends Versionable>(
     grupos.set(id, [...(grupos.get(id) ?? []), r])
   }
   return [...grupos.values()].map((g) => {
+    // Una corrección va después de lo que corrige aunque el reloj del dispositivo
+    // que la capturó esté atrasado.
     g.sort(
       (a, b) =>
-        a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
+        profundidad.get(a.id)! - profundidad.get(b.id)! ||
+        a.createdAt.localeCompare(b.createdAt) ||
+        a.id.localeCompare(b.id),
     )
     return {
       origen: g[0],
@@ -72,7 +78,7 @@ export function rastroDeCambios<T extends Versionable>(
         tipo:
           i === 0 ? 'registrado' : version.retirado ? 'quitado' : 'corregido',
         version,
-        anterior: orden[i - 1],
+        anterior: orden.find((v) => v.id === version.corrigeA) ?? orden[i - 1],
       }),
     )
   }
