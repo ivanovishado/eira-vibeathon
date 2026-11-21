@@ -99,6 +99,14 @@ describe('analizarTextoHoja', () => {
     expect(l.valores.plan).toBe('Ultrasonido.')
   })
 
+  it('una nota clínica separada en párrafos se lee completa', () => {
+    const l = leer(
+      'Exploración física\nNódulo de 1.5 cm.\n\nAxila sin ganglios.\n\nPlan\nUltrasonido.\n\nReferir.',
+    )
+    expect(l.valores.exploracion).toBe('Nódulo de 1.5 cm. Axila sin ganglios.')
+    expect(l.valores.plan).toBe('Ultrasonido. Referir.')
+  })
+
   it('tablas en Markdown', () => {
     const l = leer(
       '| Peso (kg) | Temperatura (°C) |\n|---|---|\n| 74 | 36.8 |\n| Plan | Referir |',

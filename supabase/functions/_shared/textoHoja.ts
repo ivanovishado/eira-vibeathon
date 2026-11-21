@@ -207,8 +207,10 @@ export function ubicarValores(
   for (const cruda of lineas) {
     const { texto: linea, titulo } = limpiarLinea(cruda)
     if (!linea) {
-      // Una línea en blanco cierra el valor (así no se cuelan los títulos de sección).
-      if (actual?.partes.length) cerrar()
+      // Una línea en blanco cierra un valor corto; una nota clínica (párrafo) sigue
+      // hasta la próxima etiqueta o título de sección.
+      if (actual?.partes.length && campos[actual.campo].tipo !== 'parrafo')
+        cerrar()
       continue
     }
     const etiqueta = separarEtiqueta(linea, etiquetas)
