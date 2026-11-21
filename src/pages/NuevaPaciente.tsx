@@ -55,11 +55,12 @@ export function NuevaPaciente() {
     const nuevos = validarPaciente(form)
     setErrores(nuevos)
     if (Object.keys(nuevos).length > 0) return
+    // Sin índice no se puede revisar duplicadas; el botón está deshabilitado mientras carga.
+    if (!indice) return
     const datosFinales = aDatosPaciente(form)
     const revisar =
-      indice &&
       buscarPosiblesDuplicadas(indice.pacientes.values(), datosFinales).total >
-        0
+      0
     if (revisar && !esOtraPersona) {
       setErrorRevision(true)
       return
@@ -226,10 +227,14 @@ export function NuevaPaciente() {
           </Link>
           <button
             type="submit"
-            disabled={guardando}
+            disabled={guardando || !indice}
             className="rounded-lg bg-pink-700 px-4 py-2 text-sm font-medium text-white hover:bg-pink-800 disabled:opacity-50"
           >
-            {hayDuplicadas ? 'Guardar como paciente nueva' : 'Guardar'}
+            {!indice
+              ? 'Cargando expedientes…'
+              : hayDuplicadas
+                ? 'Guardar como paciente nueva'
+                : 'Guardar'}
           </button>
         </div>
       </form>
