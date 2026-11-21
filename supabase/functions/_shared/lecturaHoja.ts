@@ -5,6 +5,8 @@
  */
 
 export const MODELO_POR_DEFECTO = 'gemini-2.5-flash'
+/** Tiempo máximo que la Edge Function espera a Gemini. */
+export const LIMITE_GEMINI_MS = 90_000
 export const URL_GEMINI = 'https://generativelanguage.googleapis.com/v1beta'
 
 export type TipoCampoLectura = 'texto' | 'parrafo' | 'numero' | 'fecha'

@@ -5,6 +5,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
   ErrorLectura,
   leerHojaConGemini,
+  LIMITE_GEMINI_MS,
   MODELO_POR_DEFECTO,
   validarCampos,
 } from '../_shared/lecturaHoja.ts'
@@ -89,7 +90,7 @@ Deno.serve(async (req) => {
       tipoImagen: foto.type || 'image/jpeg',
       modelo: Deno.env.get('GEMINI_MODEL') || MODELO_POR_DEFECTO,
       url: Deno.env.get('GEMINI_API_URL') || undefined,
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(LIMITE_GEMINI_MS),
     })
     return responder(lectura)
   } catch (e) {

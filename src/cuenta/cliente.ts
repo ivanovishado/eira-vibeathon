@@ -4,7 +4,21 @@ import { configSupabase } from './config'
 /** Una red mala puede dejar una petición colgada; mejor fallar y reintentar. */
 const LIMITE_PETICION_MS = 20_000
 
-const fetchConLimite: typeof fetch = (entrada, init) => {
+const conLimitePropio = new WeakSet<AbortSignal>()
+
+/**
+ * Señal con un límite distinto al general, para las pocas peticiones que tardan
+ * más por diseño (la lectura de una hoja). Pásala como `signal` de la llamada.
+ */
+export function limitePropio(ms: number): AbortSignal {
+  const signal = AbortSignal.timeout(ms)
+  conLimitePropio.add(signal)
+  return signal
+}
+
+export const fetchConLimite: typeof fetch = (entrada, init) => {
+  if (init?.signal && conLimitePropio.has(init.signal))
+    return fetch(entrada, init)
   const limite = AbortSignal.timeout(LIMITE_PETICION_MS)
   const signal =
     init?.signal && 'any' in AbortSignal

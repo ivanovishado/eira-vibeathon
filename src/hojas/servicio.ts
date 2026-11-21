@@ -1,12 +1,19 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type {
-  CampoLectura,
-  ResultadoLectura,
+import {
+  LIMITE_GEMINI_MS,
+  type CampoLectura,
+  type ResultadoLectura,
 } from '../../supabase/functions/_shared/lecturaHoja.ts'
-import { obtenerCliente } from '../cuenta/cliente'
+import { limitePropio, obtenerCliente } from '../cuenta/cliente'
 import { ErrorSincronizacion } from '../sync/remoto'
 
 export const BUCKET_HOJAS = 'hojas'
+
+/**
+ * La función espera a Gemini hasta LIMITE_GEMINI_MS, más bajar la foto de Storage.
+ * Cortar antes en el cliente haría reintentar (y pagar) una lectura que sí iba a llegar.
+ */
+export const LIMITE_LECTURA_MS = LIMITE_GEMINI_MS + 30_000
 
 /**
  * Lo que la app necesita del servidor para leer hojas. Los errores son
@@ -72,7 +79,7 @@ export function crearServicioSupabase(
       const cliente = await conSesion()
       const { data, error } = await cliente.functions.invoke<ResultadoLectura>(
         'leer-hoja',
-        { body: { ruta, campos } },
+        { body: { ruta, campos }, signal: limitePropio(LIMITE_LECTURA_MS) },
       )
       if (error) {
         const respuesta = (error as { context?: Response }).context
