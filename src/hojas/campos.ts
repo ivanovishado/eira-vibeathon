@@ -113,13 +113,18 @@ export function pacienteDeLectura(
   marcas: Partial<Record<keyof FormPaciente, MarcaLectura>>
 } {
   const { valores, marcas } = porPrefijo<keyof FormPaciente>(lectura, PACIENTE)
+  const leidoCelular = Boolean(valores.celular)
   if (valores.celular) valores.celular = normalizarCelularLeido(valores.celular)
   if (valores.curp)
     valores.curp = valores.curp.replace(/\s+/g, '').toUpperCase()
   const form = { ...FORM_VACIO, ...valores }
   const errores = validarPaciente(form, hoy)
   for (const campo of ['fechaNacimiento', 'celular', 'curp'] as const)
-    if (errores[campo] || (campo === 'celular' && form.celular.length > 10)) {
+    if (
+      errores[campo] ||
+      // Algo se leyó (un garabato) pero no queda ningún dígito.
+      (campo === 'celular' && leidoCelular && form.celular.length !== 10)
+    ) {
       descartarInvalido(valores, marcas, campo)
       form[campo] = ''
     }

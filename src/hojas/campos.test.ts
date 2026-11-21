@@ -105,6 +105,17 @@ describe('de la lectura al formulario', () => {
     })
   })
 
+  it('un celular leído sin ningún dígito (garabato) queda vacío y dudoso', () => {
+    const { form, marcas } = pacienteDeLectura({
+      valores: { 'paciente.celular': 'wwwwww' },
+      dudosos: [],
+      ilegibles: [],
+      leidaEn: '2026-11-20T10:00:00.000Z',
+    })
+    expect(form.celular).toBe('')
+    expect(marcas.celular).toBe('dudoso')
+  })
+
   it('normaliza celular y CURP leídos', () => {
     const { form, marcas } = pacienteDeLectura({
       valores: {
