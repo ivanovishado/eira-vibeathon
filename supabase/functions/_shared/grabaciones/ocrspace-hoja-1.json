@@ -1,0 +1,21 @@
+{
+  "ParsedResults": [
+    {
+      "TextOverlay": {
+        "Lines": [],
+        "HasOverlay": false,
+        "Message": "Overlay not requested."
+      },
+      "TextOrientation": "0",
+      "FileParseExitCode": 1,
+      "ParsedText": "EIRA A.C. Brigada de salud\nHoja de consulta (formato de prueba, datos ficticios)\n\nDATOS DE LA PACIENTE\n\nNombre(s)\nRosa Elena\n\nPrimer apellido\nMartinez\n\nSegundo apellido\nCruz\n\nFecha de nacimiento\n14/03/1978\n\nCelular\n951 123 4567\n\nCURP\nMwwwn\n\nComunidad\nSan Miguel del Valle\n\nMunicipio\nTlacolula\n\nVISITA\n\nFecha\n20/11/2026\n\nMédica o médico\nDra. Laura Gómez\n\nMotivo de consulta\nTamizaje de rutina\n\nSIGNOS VITALES\n\nPeso (kg)\n68.5\n\nTalla (cm)\n156\n\nPresión arterial\n130/85\n\nFrec. cardiaca\n78\n\nTemperatura (°C)\n36.6\n\nVALORACIÓN\n\nAntecedentes\nMadre con cáncer de mama. G3 P3.\n\nExploración física\nMamas simétricas, sin nódulos palpables.\n\nDiagnóstico\nSana. Exploración mamaria normal.\n\nPlan\nMastografía en 1 año. Papanicolaou en próxima brigada.",
+      "ErrorMessage": "",
+      "ErrorDetails": ""
+    }
+  ],
+  "OCRExitCode": 1,
+  "IsErroredOnProcessing": false,
+  "ProcessingTimeInMilliseconds": "2769",
+  "SearchablePDFURL": "",
+  "Notice": "This result was produced with the shared 'helloworld' demo key, which is rate limited and for testing only. For regular use, get a free personal OCR API key at https://ocr.space/ocrapi/freekey and send it as the apikey parameter. PRO plans with much higher limits: https://ocr.space/ocrapi"
+}

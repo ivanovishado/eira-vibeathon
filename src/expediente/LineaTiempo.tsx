@@ -1,5 +1,6 @@
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router-dom'
-import type { AtencionExterna, Estudio } from '../db/schema'
+import { db, type AtencionExterna, type Estudio } from '../db/schema'
 import {
   CAMPOS_ATENCION_EXTERNA,
   ETIQUETAS_TIPO_ATENCION,
@@ -114,6 +115,7 @@ function TarjetaConsulta({
         Atendió: {consulta.medico}
         {brigada ? ` · Brigada ${brigada.lugar}` : ''}
       </p>
+      <EnlaceHoja consultaId={consulta.id} />
     </div>
   )
 
@@ -357,5 +359,19 @@ function TarjetaExterna({
         {versiones}
       </div>
     </article>
+  )
+}
+
+/** Si la consulta salió de una hoja en papel, enlace a su foto. */
+function EnlaceHoja({ consultaId }: { consultaId: string }) {
+  const hoja = useLiveQuery(
+    () => db.hojas.where('consultaId').equals(consultaId).first(),
+    [consultaId],
+  )
+  if (!hoja) return null
+  return (
+    <Link to={`/hojas/${hoja.id}`} className="text-sm text-pink-700 underline">
+      Ver foto de la hoja original
+    </Link>
   )
 }

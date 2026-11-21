@@ -79,6 +79,7 @@ export async function registrarConsulta(
   pacienteId: string,
   captura: CapturaConsulta,
   db: EiraDB = dbPorDefecto,
+  clave = claveBorrador(pacienteId, captura.corrigeA),
 ): Promise<Consulta> {
   const errores = validarCaptura(captura)
   if (Object.keys(errores).length) throw new CapturaInvalida(errores)
@@ -122,7 +123,7 @@ export async function registrarConsulta(
           aDatosRegistro('antecedente', fila.valores, pacienteId),
           db,
         )
-      await db.borradores.delete(claveBorrador(pacienteId, captura.corrigeA))
+      await db.borradores.delete(clave)
       const recordados: Partial<Record<IdCampo, string>> = {}
       for (const id of CAMPOS_RECORDADOS) {
         const v = captura.valores[id]?.trim()

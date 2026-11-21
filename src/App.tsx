@@ -4,9 +4,11 @@ import { Ajustes } from './pages/Ajustes'
 import { BuscarPaciente } from './pages/BuscarPaciente'
 import { Cuenta } from './pages/Cuenta'
 import { Expediente } from './pages/Expediente'
+import { Hojas } from './pages/Hojas'
 import { NuevaConsulta } from './pages/NuevaConsulta'
 import { NuevaPaciente } from './pages/NuevaPaciente'
 import { RegistroHistorial } from './pages/RegistroHistorial'
+import { RevisarHoja } from './pages/RevisarHoja'
 
 export default function App() {
   return (
@@ -30,6 +32,8 @@ export default function App() {
             path="pacientes/:pacienteId/atencion-externa/nuevo"
             element={<RegistroHistorial key="externa" clase="externa" />}
           />
+          <Route path="hojas" element={<Hojas />} />
+          <Route path="hojas/:hojaId" element={<RevisarHoja />} />
           <Route path="ajustes" element={<Ajustes />} />
           <Route path="cuenta" element={<Cuenta />} />
         </Route>

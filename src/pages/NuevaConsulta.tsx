@@ -1,8 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { nombreCompleto } from '../db/repo'
-import { db, TIPOS_ESTUDIO, type TipoEstudio } from '../db/schema'
+import {
+  db,
+  TIPOS_ESTUDIO,
+  type Paciente,
+  type TipoEstudio,
+} from '../db/schema'
 import { registrarConsulta } from '../expediente/captura'
 import { CampoFormulario } from '../expediente/CampoFormulario'
 import { DesdeUltimaVisita } from '../expediente/DesdeUltimaVisita'
@@ -24,6 +29,13 @@ import {
   lineaIdentificacion,
 } from '../expediente/presentacion'
 import { useCapturaConsulta } from '../expediente/useCapturaConsulta'
+import { TEXTO_MARCA, type MarcaLectura } from '../hojas/campos'
+import { leerHojasAhora } from '../hojas/fondo'
+import {
+  claveBorradorHoja,
+  confirmarHoja,
+  type EleccionPaciente,
+} from '../hojas/hojas'
 import type { EstadoExpediente } from './Expediente'
 
 const estiloEntrada =
@@ -33,6 +45,34 @@ export function NuevaConsulta() {
   const { pacienteId = '' } = useParams()
   const [busqueda] = useSearchParams()
   const corrigeA = busqueda.get('corrige') ?? undefined
+  return <FormularioConsulta pacienteId={pacienteId} corrigeA={corrigeA} />
+}
+
+/** Consulta que sale de una hoja en papel: se confirma junto con la hoja. */
+export interface ConsultaDeHoja {
+  hojaId: string
+  eleccion: EleccionPaciente
+  /** Si la paciente es nueva, su vista previa (aún no está guardada). */
+  pacienteSinGuardar?: Paciente
+  valores: Partial<Record<IdCampo, string>>
+  marcas: Partial<Record<IdCampo, MarcaLectura>>
+  encabezado: ReactNode
+}
+
+/**
+ * Formulario de consulta (captura manual, corrección o revisión de una hoja). Con
+ * `hoja`, arranca con los valores leídos, resalta los dudosos y al guardar confirma
+ * la hoja; nada se escribe en el expediente antes.
+ */
+export function FormularioConsulta({
+  pacienteId,
+  corrigeA,
+  hoja,
+}: {
+  pacienteId: string
+  corrigeA?: string
+  hoja?: ConsultaDeHoja
+}) {
   const navegar = useNavigate()
   const {
     estado,
@@ -42,7 +82,15 @@ export function NuevaConsulta() {
     cerrar,
     reabrir,
     descartar,
-  } = useCapturaConsulta(pacienteId, corrigeA)
+  } = useCapturaConsulta(
+    pacienteId,
+    corrigeA,
+    hoja && {
+      clave: claveBorradorHoja(hoja.hojaId),
+      pacienteSinGuardar: hoja.pacienteSinGuardar,
+      valoresIniciales: hoja.valores,
+    },
+  )
   const brigadas = useLiveQuery(
     () => db.brigadas.orderBy('fecha').reverse().toArray(),
     [],
@@ -51,6 +99,7 @@ export function NuevaConsulta() {
   const [intentoGuardar, setIntentoGuardar] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [errorGuardado, setErrorGuardado] = useState<string>()
+  const [editados, setEditados] = useState<ReadonlySet<IdCampo>>(new Set())
 
   if (estado.fase === 'cargando' || (estado.fase === 'lista' && !captura))
     return <p className="text-sm text-slate-500">Cargando…</p>
@@ -77,8 +126,15 @@ export function NuevaConsulta() {
   const errores: Errores = intentoGuardar ? validarCaptura(captura) : {}
   const urlExpediente = `/pacientes/${paciente.id}`
 
-  const cambiarCampo = (id: IdCampo, valor: string) =>
+  const cambiarCampo = (id: IdCampo, valor: string) => {
+    if (hoja?.marcas[id] && !editados.has(id))
+      setEditados((e) => new Set(e).add(id))
     actualizar((c) => ({ ...c, valores: { ...c.valores, [id]: valor } }))
+  }
+  const marcaDe = (id: IdCampo) => {
+    const m = editados.has(id) ? undefined : hoja?.marcas[id]
+    return m && { texto: TEXTO_MARCA[m] }
+  }
   const cambiarEstudio = (clave: string, cambios: Partial<EstudioCaptura>) =>
     actualizar((c) => ({
       ...c,
@@ -107,8 +163,15 @@ export function NuevaConsulta() {
     setGuardando(true)
     cerrar()
     try {
-      const consulta = await registrarConsulta(pacienteId, captura)
-      navegar(urlExpediente, {
+      const { consulta, pacienteId: guardadaEn } = hoja
+        ? await confirmarHoja(hoja.hojaId, hoja.eleccion, captura)
+        : {
+            consulta: await registrarConsulta(pacienteId, captura),
+            pacienteId,
+          }
+      // Si la hoja se pasó a mano sin leerse, su foto aún no está en Storage.
+      if (hoja) void leerHojasAhora()
+      navegar(`/pacientes/${guardadaEn}`, {
         replace: true,
         state: { consultaGuardada: consulta.id } satisfies EstadoExpediente,
       })
@@ -128,16 +191,26 @@ export function NuevaConsulta() {
   return (
     <form noValidate onSubmit={guardar} className="flex flex-col gap-4">
       <div>
-        <Link to={urlExpediente} className="text-sm text-pink-700 underline">
-          ← Expediente
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold">
-          {original ? 'Corregir consulta' : 'Nueva consulta'}
-        </h1>
+        {hoja ? (
+          hoja.encabezado
+        ) : (
+          <>
+            <Link
+              to={urlExpediente}
+              className="text-sm text-pink-700 underline"
+            >
+              ← Expediente
+            </Link>
+            <h1 className="mt-1 text-xl font-semibold">
+              {original ? 'Corregir consulta' : 'Nueva consulta'}
+            </h1>
+          </>
+        )}
         <p className="text-sm text-slate-600">
           {nombreCompleto(paciente)}
           {lineaIdentificacion(paciente) &&
             ` · ${lineaIdentificacion(paciente)}`}
+          {hoja?.pacienteSinGuardar && ' · paciente nueva'}
         </p>
       </div>
 
@@ -156,13 +229,15 @@ export function NuevaConsulta() {
             {formatearFecha(fechaDeMarca(recuperadoEn))} a las{' '}
             {horaDeMarca(recuperadoEn)}
           </span>
-          <button
-            type="button"
-            onClick={empezarDeNuevo}
-            className="font-medium underline"
-          >
-            Descartar borrador
-          </button>
+          {!hoja && (
+            <button
+              type="button"
+              onClick={empezarDeNuevo}
+              className="font-medium underline"
+            >
+              Descartar borrador
+            </button>
+          )}
         </div>
       )}
 
@@ -181,6 +256,7 @@ export function NuevaConsulta() {
                   campo={c}
                   valor={captura.valores[c.id] ?? ''}
                   error={errores[c.id]}
+                  marca={marcaDe(c.id)}
                   brigadas={brigadas}
                   onCambio={(v) => cambiarCampo(c.id, v)}
                 />
@@ -292,7 +368,11 @@ export function NuevaConsulta() {
           disabled={guardando}
           className="rounded-lg bg-pink-700 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-pink-800 disabled:opacity-50"
         >
-          {guardando ? 'Guardando…' : 'Guardar consulta'}
+          {guardando
+            ? 'Guardando…'
+            : hoja
+              ? 'Confirmar y guardar'
+              : 'Guardar consulta'}
         </button>
       </div>
     </form>

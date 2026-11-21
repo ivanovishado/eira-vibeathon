@@ -370,6 +370,8 @@ const TABLAS = [
   'borradores',
   'antecedentes',
   'atencionesExternas',
+  'hojas',
+  'imagenesHoja',
 ] as const
 
 export async function borrarDatosLocales(

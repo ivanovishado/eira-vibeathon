@@ -1,0 +1,665 @@
+{
+  "ParsedResults": [
+    {
+      "TextOverlay": {
+        "Lines": [
+          {
+            "LineText": "EIRA A.C. Brigada de salud",
+            "Words": [
+              {
+                "WordText": "EIRA A.C. Brigada de salud",
+                "Left": 83,
+                "Top": 84,
+                "Height": 50,
+                "Width": 528
+              }
+            ],
+            "MaxHeight": 50,
+            "MinTop": 84
+          },
+          {
+            "LineText": "Hoja de consulta (formato de prueba, datos ficticios)",
+            "Words": [
+              {
+                "WordText": "Hoja de consulta (formato de prueba, datos ficticios)",
+                "Left": 83,
+                "Top": 130,
+                "Height": 35,
+                "Width": 528
+              }
+            ],
+            "MaxHeight": 35,
+            "MinTop": 130
+          },
+          {
+            "LineText": "DATOS DE LA PACIENTE",
+            "Words": [
+              {
+                "WordText": "DATOS DE LA PACIENTE",
+                "Left": 83,
+                "Top": 200,
+                "Height": 32,
+                "Width": 238
+              }
+            ],
+            "MaxHeight": 32,
+            "MinTop": 200
+          },
+          {
+            "LineText": "Nombre(s)",
+            "Words": [
+              {
+                "WordText": "Nombre(s)",
+                "Left": 83,
+                "Top": 227,
+                "Height": 28,
+                "Width": 103
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 227
+          },
+          {
+            "LineText": "Primer apellido",
+            "Words": [
+              {
+                "WordText": "Primer apellido",
+                "Left": 451,
+                "Top": 227,
+                "Height": 32,
+                "Width": 153
+              }
+            ],
+            "MaxHeight": 32,
+            "MinTop": 227
+          },
+          {
+            "LineText": "Segundo apellido",
+            "Words": [
+              {
+                "WordText": "Segundo apellido",
+                "Left": 816,
+                "Top": 227,
+                "Height": 28,
+                "Width": 170
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 227
+          },
+          {
+            "LineText": "Rosa Elena",
+            "Words": [
+              {
+                "WordText": "Rosa Elena",
+                "Left": 96,
+                "Top": 273,
+                "Height": 46,
+                "Width": 161
+              }
+            ],
+            "MaxHeight": 46,
+            "MinTop": 273
+          },
+          {
+            "LineText": "Martinez",
+            "Words": [
+              {
+                "WordText": "Martinez",
+                "Left": 463,
+                "Top": 273,
+                "Height": 39,
+                "Width": 153
+              }
+            ],
+            "MaxHeight": 39,
+            "MinTop": 273
+          },
+          {
+            "LineText": "Cruz",
+            "Words": [
+              {
+                "WordText": "Cruz",
+                "Left": 824,
+                "Top": 273,
+                "Height": 32,
+                "Width": 74
+              }
+            ],
+            "MaxHeight": 32,
+            "MinTop": 273
+          },
+          {
+            "LineText": "Fecha de nacimiento",
+            "Words": [
+              {
+                "WordText": "Fecha de nacimiento",
+                "Left": 83,
+                "Top": 341,
+                "Height": 28,
+                "Width": 208
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 341
+          },
+          {
+            "LineText": "Celular",
+            "Words": [
+              {
+                "WordText": "Celular",
+                "Left": 451,
+                "Top": 334,
+                "Height": 28,
+                "Width": 73
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 334
+          },
+          {
+            "LineText": "CURP",
+            "Words": [
+              {
+                "WordText": "CURP",
+                "Left": 816,
+                "Top": 330,
+                "Height": 25,
+                "Width": 60
+              }
+            ],
+            "MaxHeight": 25,
+            "MinTop": 330
+          },
+          {
+            "LineText": "14/03/1978",
+            "Words": [
+              {
+                "WordText": "14/03/1978",
+                "Left": 96,
+                "Top": 377,
+                "Height": 44,
+                "Width": 196
+              }
+            ],
+            "MaxHeight": 44,
+            "MinTop": 377
+          },
+          {
+            "LineText": "951 123 4567",
+            "Words": [
+              {
+                "WordText": "951 123 4567",
+                "Left": 463,
+                "Top": 366,
+                "Height": 42,
+                "Width": 227
+              }
+            ],
+            "MaxHeight": 42,
+            "MinTop": 366
+          },
+          {
+            "LineText": "wwwwww",
+            "Words": [
+              {
+                "WordText": "wwwwww",
+                "Left": 816,
+                "Top": 359,
+                "Height": 39,
+                "Width": 221
+              }
+            ],
+            "MaxHeight": 39,
+            "MinTop": 359
+          },
+          {
+            "LineText": "Comunidad",
+            "Words": [
+              {
+                "WordText": "Comunidad",
+                "Left": 83,
+                "Top": 443,
+                "Height": 28,
+                "Width": 116
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 443
+          },
+          {
+            "LineText": "Municipio",
+            "Words": [
+              {
+                "WordText": "Municipio",
+                "Left": 650,
+                "Top": 429,
+                "Height": 25,
+                "Width": 98
+              }
+            ],
+            "MaxHeight": 25,
+            "MinTop": 429
+          },
+          {
+            "LineText": "San Miguel del Valle",
+            "Words": [
+              {
+                "WordText": "San Miguel del Valle",
+                "Left": 96,
+                "Top": 472,
+                "Height": 51,
+                "Width": 307
+              }
+            ],
+            "MaxHeight": 51,
+            "MinTop": 472
+          },
+          {
+            "LineText": "Tlacolula",
+            "Words": [
+              {
+                "WordText": "Tlacolula",
+                "Left": 650,
+                "Top": 450,
+                "Height": 44,
+                "Width": 136
+              }
+            ],
+            "MaxHeight": 44,
+            "MinTop": 450
+          },
+          {
+            "LineText": "VISITA",
+            "Words": [
+              {
+                "WordText": "VISITA",
+                "Left": 96,
+                "Top": 557,
+                "Height": 26,
+                "Width": 74
+              }
+            ],
+            "MaxHeight": 26,
+            "MinTop": 557
+          },
+          {
+            "LineText": "Fecha",
+            "Words": [
+              {
+                "WordText": "Fecha",
+                "Left": 96,
+                "Top": 590,
+                "Height": 26,
+                "Width": 60
+              }
+            ],
+            "MaxHeight": 26,
+            "MinTop": 590
+          },
+          {
+            "LineText": "Médica o médico",
+            "Words": [
+              {
+                "WordText": "Médica o médico",
+                "Left": 645,
+                "Top": 586,
+                "Height": 26,
+                "Width": 179
+              }
+            ],
+            "MaxHeight": 26,
+            "MinTop": 586
+          },
+          {
+            "LineText": "20/11/2026",
+            "Words": [
+              {
+                "WordText": "20/11/2026",
+                "Left": 103,
+                "Top": 643,
+                "Height": 46,
+                "Width": 196
+              }
+            ],
+            "MaxHeight": 46,
+            "MinTop": 643
+          },
+          {
+            "LineText": "Dra. Laura Gómez",
+            "Words": [
+              {
+                "WordText": "Dra. Laura Gómez",
+                "Left": 656,
+                "Top": 607,
+                "Height": 50,
+                "Width": 285
+              }
+            ],
+            "MaxHeight": 50,
+            "MinTop": 607
+          },
+          {
+            "LineText": "Motivo de consulta",
+            "Words": [
+              {
+                "WordText": "Motivo de consulta",
+                "Left": 96,
+                "Top": 699,
+                "Height": 28,
+                "Width": 189
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 699
+          },
+          {
+            "LineText": "Tamizaje de rutina",
+            "Words": [
+              {
+                "WordText": "Tamizaje de rutina",
+                "Left": 109,
+                "Top": 734,
+                "Height": 44,
+                "Width": 270
+              }
+            ],
+            "MaxHeight": 44,
+            "MinTop": 734
+          },
+          {
+            "LineText": "SIGNOS VITALES",
+            "Words": [
+              {
+                "WordText": "SIGNOS VITALES",
+                "Left": 96,
+                "Top": 813,
+                "Height": 28,
+                "Width": 171
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 813
+          },
+          {
+            "LineText": "Peso (kg)",
+            "Words": [
+              {
+                "WordText": "Peso (kg)",
+                "Left": 96,
+                "Top": 849,
+                "Height": 32,
+                "Width": 90
+              }
+            ],
+            "MaxHeight": 32,
+            "MinTop": 849
+          },
+          {
+            "LineText": "Talla (cm)",
+            "Words": [
+              {
+                "WordText": "Talla (cm)",
+                "Left": 465,
+                "Top": 845,
+                "Height": 28,
+                "Width": 96
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 845
+          },
+          {
+            "LineText": "Presión arterial",
+            "Words": [
+              {
+                "WordText": "Presión arterial",
+                "Left": 829,
+                "Top": 834,
+                "Height": 28,
+                "Width": 154
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 834
+          },
+          {
+            "LineText": "68.5",
+            "Words": [
+              {
+                "WordText": "68.5",
+                "Left": 109,
+                "Top": 877,
+                "Height": 42,
+                "Width": 90
+              }
+            ],
+            "MaxHeight": 42,
+            "MinTop": 877
+          },
+          {
+            "LineText": "156",
+            "Words": [
+              {
+                "WordText": "156",
+                "Left": 477,
+                "Top": 881,
+                "Height": 42,
+                "Width": 72
+              }
+            ],
+            "MaxHeight": 42,
+            "MinTop": 881
+          },
+          {
+            "LineText": "130/85",
+            "Words": [
+              {
+                "WordText": "130/85",
+                "Left": 842,
+                "Top": 867,
+                "Height": 57,
+                "Width": 129
+              }
+            ],
+            "MaxHeight": 57,
+            "MinTop": 867
+          },
+          {
+            "LineText": "Frec. cardíaca",
+            "Words": [
+              {
+                "WordText": "Frec. cardíaca",
+                "Left": 96,
+                "Top": 947,
+                "Height": 28,
+                "Width": 147
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 947
+          },
+          {
+            "LineText": "Temperatura (°C)",
+            "Words": [
+              {
+                "WordText": "Temperatura (°C)",
+                "Left": 645,
+                "Top": 940,
+                "Height": 28,
+                "Width": 181
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 940
+          },
+          {
+            "LineText": "78",
+            "Words": [
+              {
+                "WordText": "78",
+                "Left": 116,
+                "Top": 988,
+                "Height": 42,
+                "Width": 41
+              }
+            ],
+            "MaxHeight": 42,
+            "MinTop": 988
+          },
+          {
+            "LineText": "36.6",
+            "Words": [
+              {
+                "WordText": "36.6",
+                "Left": 663,
+                "Top": 976,
+                "Height": 32,
+                "Width": 72
+              }
+            ],
+            "MaxHeight": 32,
+            "MinTop": 976
+          },
+          {
+            "LineText": "VALORACIÓN",
+            "Words": [
+              {
+                "WordText": "VALORACIÓN",
+                "Left": 96,
+                "Top": 1067,
+                "Height": 28,
+                "Width": 141
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 1067
+          },
+          {
+            "LineText": "Antecedentes",
+            "Words": [
+              {
+                "WordText": "Antecedentes",
+                "Left": 103,
+                "Top": 1113,
+                "Height": 28,
+                "Width": 129
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 1113
+          },
+          {
+            "LineText": "Madre con cáncer de mama. G3 P3.",
+            "Words": [
+              {
+                "WordText": "Madre con cáncer de mama. G3 P3.",
+                "Left": 109,
+                "Top": 1146,
+                "Height": 46,
+                "Width": 566
+              }
+            ],
+            "MaxHeight": 46,
+            "MinTop": 1146
+          },
+          {
+            "LineText": "Exploración física",
+            "Words": [
+              {
+                "WordText": "Exploración física",
+                "Left": 109,
+                "Top": 1239,
+                "Height": 28,
+                "Width": 183
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 1239
+          },
+          {
+            "LineText": "Mamas simétricas, sin nódulos palpables.",
+            "Words": [
+              {
+                "WordText": "Mamas simétricas, sin nódulos palpables.",
+                "Left": 122,
+                "Top": 1260,
+                "Height": 53,
+                "Width": 632
+              }
+            ],
+            "MaxHeight": 53,
+            "MinTop": 1260
+          },
+          {
+            "LineText": "Diagnóstico",
+            "Words": [
+              {
+                "WordText": "Diagnóstico",
+                "Left": 109,
+                "Top": 1366,
+                "Height": 28,
+                "Width": 116
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 1366
+          },
+          {
+            "LineText": "Sana. Exploración mamaria normal.",
+            "Words": [
+              {
+                "WordText": "Sana. Exploración mamaria normal.",
+                "Left": 122,
+                "Top": 1394,
+                "Height": 60,
+                "Width": 553
+              }
+            ],
+            "MaxHeight": 60,
+            "MinTop": 1394
+          },
+          {
+            "LineText": "Plan",
+            "Words": [
+              {
+                "WordText": "Plan",
+                "Left": 109,
+                "Top": 1491,
+                "Height": 28,
+                "Width": 47
+              }
+            ],
+            "MaxHeight": 28,
+            "MinTop": 1491
+          },
+          {
+            "LineText": "Mastografía en 1 año. Papanicolaou en próxima brigada.",
+            "Words": [
+              {
+                "WordText": "Mastografía en 1 año. Papanicolaou en próxima brigada.",
+                "Left": 122,
+                "Top": 1501,
+                "Height": 82,
+                "Width": 877
+              }
+            ],
+            "MaxHeight": 82,
+            "MinTop": 1501
+          }
+        ],
+        "HasOverlay": true,
+        "Message": "Total lines: 46"
+      },
+      "TextOrientation": "0",
+      "FileParseExitCode": 1,
+      "ParsedText": "EIRA A.C. Brigada de salud\nHola de consulta (formato de prueba, datos ficticios)\n\nDATOS DE LA PACIENTE\nNombre(s) Primer apellido Segundo apellido\nRosa Elena Martinez Cruz\nFecha de nacimiento Celular CURP\n14/03/1978 951 123 4567\nComunidad Municipio\nSan Miguel del Valle Tlacolula\n\nVISITA\nFecha Médica o médico\n20/11/2026 Dra. Laura Gómez\nMotivo de consulta\nTamizaje de rutina\n\nSIGNOS VITALES\nPeso (kg) Talla (cm) Presión arterial\n68.5 156 130/85\nFrec. cardíaca Temperatura (°C)\n78 36.6\n\nVALORACIÓN\nAntecedentes\nMadre con cáncer de mama. G3 P3.\nExploración física\nMamas simétricas, sin nódulos palpables.\nDiagnóstico\nSana. Exploración mamaria normal.\nPlan\nMastografía en 1 año. Papanicolaou en próxima brigada.",
+      "ErrorMessage": "",
+      "ErrorDetails": ""
+    }
+  ],
+  "OCRExitCode": 1,
+  "IsErroredOnProcessing": false,
+  "ProcessingTimeInMilliseconds": "30434",
+  "SearchablePDFURL": ""
+}

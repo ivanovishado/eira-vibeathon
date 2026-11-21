@@ -12,7 +12,17 @@ import {
   capturaParaCorregir,
   capturaVacia,
   type CapturaConsulta,
+  type IdCampo,
 } from './formulario'
+
+export interface OpcionesCaptura {
+  /** Clave del borrador; por omisión, una por paciente o por consulta corregida. */
+  clave?: string
+  /** Paciente aún no guardada (por ejemplo, la leída de una hoja). */
+  pacienteSinGuardar?: Paciente
+  /** Valores con los que arranca el formulario si no hay borrador. */
+  valoresIniciales?: Partial<Record<IdCampo, string>>
+}
 
 export type EstadoCaptura =
   | { fase: 'cargando' }
@@ -33,8 +43,14 @@ export const ESPERA_BORRADOR_MS = 400
  * Estado del formulario de consulta con guardado automático del borrador: se guarda
  * poco después de cada cambio, al ocultar la pestaña y al salir de la pantalla.
  */
-export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
-  const clave = claveBorrador(pacienteId, corrigeA)
+export function useCapturaConsulta(
+  pacienteId: string,
+  corrigeA?: string,
+  opciones: OpcionesCaptura = {},
+) {
+  const clave = opciones.clave ?? claveBorrador(pacienteId, corrigeA)
+  // Se leen al montar; cambiarlas después no reinicia el formulario.
+  const [iniciales] = useState(opciones)
   const [carga, setCarga] = useState<{ clave: string; estado: EstadoCaptura }>()
   const estado: EstadoCaptura =
     carga?.clave === clave ? carga.estado : { fase: 'cargando' }
@@ -51,7 +67,10 @@ export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
     pendiente.current = false
     const setEstado = (e: EstadoCaptura) => setCarga({ clave, estado: e })
     void (async () => {
-      const paciente = await db.pacientes.get(pacienteId)
+      const { pacienteSinGuardar, valoresIniciales } = iniciales
+      const paciente =
+        (await db.pacientes.get(pacienteId)) ??
+        (pacienteSinGuardar?.id === pacienteId ? pacienteSinGuardar : undefined)
       if (!paciente) {
         if (vigente) setEstado({ fase: 'sin-paciente' })
         return
@@ -72,7 +91,13 @@ export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
                 .equals(original.id)
                 .toArray(),
             )
-          : capturaVacia({ ...(await leerRecordados()), ...medicoDeCuenta() }))
+          : capturaInicial(
+              capturaVacia({
+                ...(await leerRecordados()),
+                ...medicoDeCuenta(),
+              }),
+              valoresIniciales,
+            ))
       if (!vigente) return
       actual.current = inicial
       setCaptura(inicial)
@@ -87,7 +112,7 @@ export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
     return () => {
       vigente = false
     }
-  }, [pacienteId, corrigeA, clave])
+  }, [pacienteId, corrigeA, clave, iniciales])
 
   const guardarAhora = useCallback(async () => {
     clearTimeout(temporizador.current)
@@ -153,4 +178,11 @@ export function useCapturaConsulta(pacienteId: string, corrigeA?: string) {
     reabrir,
     descartar,
   }
+}
+
+function capturaInicial(
+  base: CapturaConsulta,
+  valores: Partial<Record<IdCampo, string>> = {},
+): CapturaConsulta {
+  return { ...base, valores: { ...base.valores, ...valores } }
 }

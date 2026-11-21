@@ -71,6 +71,48 @@ npx vitest run src/sync/supabase.integration.test.ts
 
 Sin esas variables la prueba de integración se omite; `npm test` cubre la sincronización con un servidor simulado (`src/sync/servidorSimulado.ts`). Para usar la app contra Supabase local, pon su URL y llave en `.env.local`.
 
+## Hojas en papel (lectura con OCR.space)
+
+La pantalla **Hojas** (encabezado o búsqueda) fotografía hojas de consulta: en el celular abre la cámara trasera; en la laptop se eligen o arrastran archivos. La foto se reduce en el dispositivo (lado mayor ~2000 px, JPEG, siempre por debajo de 1 MB: primero baja la calidad y solo si no basta la resolución) y se guarda en IndexedDB sin necesitar red. Con red y sesión se sube al bucket privado `hojas` y la Edge Function `leer-hoja` la manda a leer; tras capturar una sola foto la pantalla muestra «Leyendo la hoja…» y abre la revisión en cuanto termina. Sin red o sin sesión la hoja queda **sin enviar** en la cola y se lee sola al volver la conexión. Al revisar (foto y campos a la vez; paso 1 paciente, paso 2 consulta con el formulario de siempre) los campos dudosos o ilegibles se resaltan. **Nada llega al expediente hasta confirmar**; entonces paciente y consulta se guardan por `src/db/repo.ts` → `colaSalida` y la hoja queda ligada a ellas. Sin Supabase las hojas se quedan «sin enviar» y se pasan a mano.
+
+- Los campos a leer salen de `CAMPOS_PACIENTE` (`src/lib/formPaciente.ts`) y `CAMPOS_CONSULTA` (`src/expediente/formulario.ts`): cambiar el formulario cambia la lectura (`src/hojas/campos.ts`). Si la etiqueta impresa en la hoja real difiere de la del formulario, se agrega en `enHoja` del mismo campo (ej. `Frec. cardiaca`).
+- Lector por omisión: OCR.space Engine 3 (`supabase/functions/_shared/ocrSpace.ts`). Devuelve texto; `textoHoja.ts` ubica cada valor por su etiqueta (sin importar acentos, mayúsculas, puntuación, unidades, abreviaturas ni una o dos letras mal leídas) y normaliza fechas `DD/MM/AAAA` → `AAAA-MM-DD` y números con coma.
+- Sin modelo no hay «duda» por campo: se marca dudoso lo que no se encontró o vino vacío, la fecha con año de dos dígitos y el número con letras corregidas (O→0). Al pasar al formulario, lo que no cumple su validación (CURP, celular que no da 10 dígitos, fecha imposible o futura, número fuera de rango, presión sin `120/80`) **queda vacío y marcado dudoso**, igual que lo ilegible: se captura viendo la foto.
+- Gemini sigue disponible (`LECTOR_HOJAS=gemini`); prompt, esquema y análisis en `lecturaHoja.ts`. Cada lector pide solo su llave.
+- Las llaves viven solo en el servidor (secretos de la función), nunca en `VITE_*`.
+- Errores: 429 momentáneos, 5xx y fallos de red se reintentan (en la función con espera, y después la cola). Llave inválida, llave de demostración o cuota agotada son **errores de configuración**: la hoja queda en «Error de lectura» con el motivo y se reintenta a mano tras corregirlo. También se revisa `IsErroredOnProcessing`/`OCRExitCode` de las respuestas HTTP 200.
+
+### Llave de OCR.space
+
+1. Pide la llave gratuita en https://ocr.space/ocrapi/freekey (llega por correo).
+2. Plan gratuito: 25,000 peticiones al mes, 500 al día por IP, archivos de hasta 1 MB, y para el **Engine 3** (el que lee letra manuscrita) una cuota aparte de 1,000 lecturas al mes. OCR.space dice borrar los archivos al terminar y procesar en la UE.
+3. La llave de demostración `helloworld` solo sirve para pruebas manuales (responde 429 con frecuencia); no la configures en el servidor.
+
+### Publicar la función
+
+```sh
+supabase link --project-ref <ref>
+supabase db push                                   # aplica la migración 20261121020000_hojas.sql (tabla, bucket y políticas)
+supabase secrets set OCR_SPACE_API_KEY=<llave de https://ocr.space/ocrapi/freekey>
+supabase secrets set OCR_SPACE_ENGINE=3            # opcional; es el valor por defecto
+supabase functions deploy leer-hoja
+# Para leer con Gemini en su lugar:
+# supabase secrets set LECTOR_HOJAS=gemini GEMINI_API_KEY=<llave> GEMINI_MODEL=gemini-2.5-flash
+```
+
+La función exige un JWT válido (verificación de Supabase y `auth.getUser`) y lee la foto con la sesión de quien llama, así que aplican las políticas de Storage (solo `authenticated`).
+
+### Probar la lectura
+
+```sh
+OCR_SPACE_API_KEY=<llave> npm run leer-hoja -- public/demo/hojas/hoja-1.jpg            # lectura real desde la terminal
+OCR_SPACE_API_KEY=<llave> npm run leer-hoja -- --crudo public/demo/hojas/hoja-2.jpg    # también imprime la respuesta de OCR.space
+GEMINI_API_KEY=<llave> npm run leer-hoja -- --lector gemini public/demo/hojas/hoja-1.jpg
+VITE_LECTOR_SIMULADO=true npm run build && npm run preview                             # demo sin servidor ni llave
+```
+
+`public/demo/hojas/` tiene dos hojas ficticias llenadas «a mano» (`scripts/generar-hojas-demo.py`; la letra imita manuscrita, la exactitud con hojas reales no está medida). Las pruebas usan respuestas reales de OCR.space grabadas sobre ellas (`supabase/functions/_shared/grabaciones/`), sin red. Con `VITE_LECTOR_SIMULADO=true` y sin Supabase, la app usa un lector simulado (`src/hojas/servicioSimulado.ts`) con la misma interfaz que el real. Contra Supabase local: `supabase start` y `supabase functions serve leer-hoja --env-file <archivo con OCR_SPACE_API_KEY>`.
+
 ## Despliegue (Cloudflare Pages)
 
 La app es estática: `dist/` se publica en Cloudflare Pages, que sirve HTTPS y permite instalarla en el teléfono (Android: menú ⋮ → «Instalar app»; iPhone: Safari → Compartir → «Agregar a inicio»). `public/_headers` evita que el navegador guarde en caché el service worker.
@@ -94,6 +136,8 @@ CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... \
 - `src/db/repo.ts`: escrituras (con cola de salida).
 - `src/db/seed.ts`: datos ficticios.
 - `src/sync/`: sincronización (tablas, motor, programador de reintentos, cliente Supabase).
+- `src/hojas/`: hojas en papel (captura, cola de lectura, campos a leer, visor de foto).
+- `supabase/functions/`: Edge Function `leer-hoja` y módulos compartidos de lectura (OCR.space, texto → campos, Gemini).
 - `src/cuenta/`: configuración, cliente Supabase y cuenta de la médica.
 - `supabase/migrations/`: esquema del servidor con RLS.
 - `src/lib/normalize.ts`: normalización de nombres y teléfonos para búsqueda.
@@ -112,5 +156,5 @@ CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... \
 3. Cuenta del médico y sincronización con Supabase: inicio de sesión, envío de la cola de salida y descarga en segundo plano sin bloquear el uso (hecha).
 4. Preparación de brigada: aviso para abrir la app y descargar los datos antes de salir, con estado visible de la última descarga.
 5. Historial entre visitas: antecedentes (personales y familiares, incluido cáncer) y atención recibida fuera de EIRA desde la última consulta (hecha).
-6. Lectura de hojas en papel con revisión humana.
+6. Lectura de hojas en papel con revisión humana (hecha).
 7. PIN, respaldo y demo.

@@ -1,0 +1,21 @@
+{
+  "ParsedResults": [
+    {
+      "TextOverlay": {
+        "Lines": [],
+        "HasOverlay": false,
+        "Message": "Overlay not requested."
+      },
+      "TextOrientation": "0",
+      "FileParseExitCode": 1,
+      "ParsedText": "# EIRA A.C. · Brigada de salud\nHoja de consulta (formato de prueba, datos ficticios)\n\n## DATOS DE LA PACIENTE\nNombre(s)\nGuadalupe\nPrimer apellido\nHernández\nSegundo apellido\nLópez\nFecha de nacimiento\n02/08/65\nCelular\nCURP\nComunidad\nSanta Ana\nMunicipio\nZaachila\n\n## VISITA\nFecha\n20/11/2026\nMédica o médico\nDr. Andrés Ruiz\nMotivo de consulta\nBolita en mama izquierda\n\n## SIGNOS VITALES\nPeso (kg)\n74\nTalla (cm)\nFrec. cardiaca\nTemperatura (°C)\n36.8\nPresión arterial\n140/90\n\n## VALORACIÓN\nAntecedentes\n\n## Exploración física\nNódulo de 1.5 cm en cuadrante superior externo izq., móvil.\n\n## Diagnóstico\nNódulo mamario izquierdo a estudiar.\n\n## Plan\nUltrasonido mamario. Referir a ginecología.",
+      "ErrorMessage": "",
+      "ErrorDetails": ""
+    }
+  ],
+  "OCRExitCode": 1,
+  "IsErroredOnProcessing": false,
+  "ProcessingTimeInMilliseconds": "1288",
+  "SearchablePDFURL": "",
+  "Notice": "This result was produced with the shared 'helloworld' demo key, which is rate limited and for testing only. For regular use, get a free personal OCR API key at https://ocr.space/ocrapi/freekey and send it as the apikey parameter. PRO plans with much higher limits: https://ocr.space/ocrapi"
+}

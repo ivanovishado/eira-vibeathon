@@ -25,6 +25,24 @@ export const FORM_VACIO: FormPaciente = {
   curp: '',
 }
 
+/**
+ * Etiquetas y pistas de formato; las usan el alta y la lectura de hojas. `enHoja`:
+ * cómo viene impresa la etiqueta en la hoja de papel si no es igual a `etiqueta`.
+ */
+export const CAMPOS_PACIENTE: Record<
+  keyof FormPaciente,
+  { etiqueta: string; ayuda?: string; fecha?: true; enHoja?: string[] }
+> = {
+  nombres: { etiqueta: 'Nombre(s)' },
+  apellidoPaterno: { etiqueta: 'Primer apellido' },
+  apellidoMaterno: { etiqueta: 'Segundo apellido' },
+  fechaNacimiento: { etiqueta: 'Fecha de nacimiento', fecha: true },
+  celular: { etiqueta: 'Celular', ayuda: '10 dígitos' },
+  comunidad: { etiqueta: 'Comunidad' },
+  municipio: { etiqueta: 'Municipio' },
+  curp: { etiqueta: 'CURP', ayuda: '18 caracteres' },
+}
+
 export type ErroresPaciente = Partial<Record<keyof FormPaciente, string>>
 
 /** 10 dígitos, opcionalmente con lada de país 52 (o 521, formato anterior para celulares). */
