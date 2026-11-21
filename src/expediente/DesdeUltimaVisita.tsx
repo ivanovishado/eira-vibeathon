@@ -49,9 +49,7 @@ export function DesdeUltimaVisita({
       db.antecedentes.where('pacienteId').equals(pacienteId).toArray(),
     ])
     return {
-      resumen: resumirHistorial(
-        construirHistorial(consultas, [], [], externas),
-      ),
+      historial: construirHistorial(consultas, [], [], externas),
       antecedentes: ordenarAntecedentes(
         agruparVersiones(antecedentes).filter((g) => !g.vigente.retirado),
       ),
@@ -60,7 +58,18 @@ export function DesdeUltimaVisita({
   if (!datos) return null
 
   const fechaConsulta = captura.valores.fecha || undefined
-  const ultima = datos.resumen.ultimaConsulta?.consulta
+  // Si la consulta se captura con fecha pasada, lo posterior no cuenta.
+  const antesDeConsulta = (fecha: string) =>
+    !fechaConsulta || fecha <= fechaConsulta
+  const resumen = resumirHistorial(
+    datos.historial.filter(
+      (e) => e.tipo !== 'consulta' || antesDeConsulta(e.fecha),
+    ),
+  )
+  const externasDesdeUltima = resumen.externasDesdeUltima.filter((a) =>
+    antesDeConsulta(a.fecha),
+  )
+  const ultima = resumen.ultimaConsulta?.consulta
   const meses =
     ultima && fechaConsulta ? mesesEntre(ultima.fecha, fechaConsulta) : 0
   const destacar = !ultima || meses >= MESES_PARA_DESTACAR
@@ -169,11 +178,11 @@ export function DesdeUltimaVisita({
         <h3 className="text-sm font-semibold text-slate-800">
           Atención fuera de EIRA
         </h3>
-        {datos.resumen.externasDesdeUltima.length > 0 && (
+        {externasDesdeUltima.length > 0 && (
           <div className="text-sm text-slate-700">
             <p className="text-xs text-slate-500">Ya registrado:</p>
             <ul className="list-inside list-disc">
-              {datos.resumen.externasDesdeUltima.map((a) => (
+              {externasDesdeUltima.map((a) => (
                 <li key={a.id}>
                   {fechaAtencion(a)} · {tituloAtencion(a)}
                 </li>
