@@ -47,7 +47,8 @@ export function iniciarSincronizacion(): Programador | undefined {
   let cuentaId = leerCuenta()?.id
   suscribirCuenta(() => {
     const id = leerCuenta()?.id
-    if (id !== cuentaId && id) void p.ahora()
+    const sinSesion = p.obtenerEstado().error?.tipo === 'sesion'
+    if (id && (id !== cuentaId || sinSesion)) void p.ahora()
     cuentaId = id
   })
   void p.ahora()
