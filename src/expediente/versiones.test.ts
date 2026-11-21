@@ -26,6 +26,17 @@ describe('agruparVersiones', () => {
     expect(g.vigente.id).toBe('c')
     expect(g.anteriores.map((x) => x.id)).toEqual(['b', 'a'])
   })
+
+  it('un retiro más reciente vale aunque otra rama tenga más correcciones', () => {
+    const [g] = agruparVersiones([
+      v('a', '2026-11-21T10:00:00.000Z'),
+      v('b', '2026-11-21T11:00:00.000Z', 'a'),
+      v('c', '2026-11-21T12:00:00.000Z', 'b'),
+      { ...v('d', '2026-11-21T13:00:00.000Z', 'a'), retirado: true },
+    ])
+    expect(g.vigente.id).toBe('d')
+    expect(g.anteriores.map((x) => x.id)).toEqual(['c', 'b', 'a'])
+  })
 })
 
 describe('rastroDeCambios', () => {

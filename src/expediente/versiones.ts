@@ -50,10 +50,16 @@ export function agruparVersiones<T extends Versionable>(
         a.createdAt.localeCompare(b.createdAt) ||
         a.id.localeCompare(b.id),
     )
+    // Vale la versión más reciente entre las que nadie ha corregido: si dos dispositivos
+    // corrigieron sin conexión por separado, gana la última captura, no la cadena más larga.
+    const corregidas = new Set(g.map((r) => r.corrigeA))
+    const vigente = g
+      .filter((r) => !corregidas.has(r.id))
+      .reduce((a, b) => (b.createdAt.localeCompare(a.createdAt) >= 0 ? b : a))
     return {
       origen: g[0],
-      vigente: g[g.length - 1],
-      anteriores: g.slice(0, -1).reverse(),
+      vigente,
+      anteriores: g.filter((r) => r !== vigente).reverse(),
     }
   })
 }
