@@ -16,7 +16,11 @@ const MESES = [
 function partes(fecha: string) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha)
   if (!m) return undefined
-  return { anio: Number(m[1]), mes: Number(m[2]), dia: Number(m[3]) }
+  const [anio, mes, dia] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  const d = new Date(anio, mes - 1, dia)
+  // Descarta fechas imposibles como 1980-02-31 o 1980-13-01.
+  if (d.getMonth() !== mes - 1 || d.getDate() !== dia) return undefined
+  return { anio, mes, dia }
 }
 
 /** Fecha local de hoy en formato YYYY-MM-DD. */
