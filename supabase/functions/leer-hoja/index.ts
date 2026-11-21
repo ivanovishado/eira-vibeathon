@@ -66,11 +66,21 @@ Deno.serve(async (req) => {
     const { data: foto, error: errorFoto } = await supabase.storage
       .from('hojas')
       .download(cuerpo.ruta)
-    if (errorFoto || !foto)
-      return responder(
-        { error: 'No se encontró la foto en el servidor.', tipo: 'peticion' },
-        404,
-      )
+    if (errorFoto || !foto) {
+      const e = errorFoto as { statusCode?: string; code?: string } | null
+      return e?.statusCode === '404' || e?.code === 'NoSuchKey'
+        ? responder(
+            {
+              error: 'No se encontró la foto en el servidor.',
+              tipo: 'peticion',
+            },
+            404,
+          )
+        : responder(
+            { error: 'No se pudo abrir la foto; se reintentará.', tipo: 'red' },
+            503,
+          )
+    }
 
     const lectura = await leerHojaConGemini({
       apiKey,
