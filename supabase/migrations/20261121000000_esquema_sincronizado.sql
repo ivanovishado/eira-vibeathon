@@ -80,7 +80,7 @@ create index on public.consultas (paciente_id);
 create index on public.estudios (paciente_id);
 
 -- Marca de cambio ------------------------------------------------------------
--- Toda escritura mueve servidor_xid y no deja cambiar quién creó el registro. Si la
+-- Toda escritura mueve servidor_xid; creado_por lo pone el servidor y no cambia. Si la
 -- tabla tiene updated_at, una versión más vieja que la guardada se ignora (gana la
 -- edición más reciente aunque llegue antes).
 create function public.marcar_cambio() returns trigger
@@ -95,6 +95,8 @@ begin
       return null;
     end if;
     new.creado_por := old.creado_por;
+  else
+    new.creado_por := coalesce(auth.uid(), new.creado_por);
   end if;
   new.servidor_xid := pg_current_xact_id();
   new.servidor_actualizado_en := now();
