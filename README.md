@@ -100,6 +100,23 @@ VITE_LECTOR_SIMULADO=true npm run build && npm run preview                 # dem
 
 `public/demo/hojas/` tiene dos hojas ficticias llenadas «a mano» (`scripts/generar-hojas-demo.py`). Con `VITE_LECTOR_SIMULADO=true` y sin Supabase, la app usa un lector simulado (`src/hojas/servicioSimulado.ts`) con la misma interfaz que el real. Contra Supabase local: `supabase start` y `supabase functions serve leer-hoja --env-file <archivo con GEMINI_API_KEY>`.
 
+## Despliegue (Cloudflare Pages)
+
+La app es estática: `dist/` se publica en Cloudflare Pages, que sirve HTTPS y permite instalarla en el teléfono (Android: menú ⋮ → «Instalar app»; iPhone: Safari → Compartir → «Agregar a inicio»). `public/_headers` evita que el navegador guarde en caché el service worker.
+
+Cada push a `main` despliega solo (`.github/workflows/deploy.yml`, también se puede lanzar a mano desde Actions). En **Settings → Secrets and variables → Actions** del repo necesita:
+
+- Variable `VITE_SUPABASE_URL`.
+- Secretos `VITE_SUPABASE_ANON_KEY`, `CLOUDFLARE_API_TOKEN` (permiso _Cloudflare Pages: Edit_) y `CLOUDFLARE_ACCOUNT_ID`.
+
+Despliegue manual:
+
+```sh
+VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... npm run build
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... \
+  npx wrangler pages deploy dist --project-name eira-expedientes --branch main
+```
+
 ## Estructura
 
 - `src/db/schema.ts`: tipos y tablas locales.
