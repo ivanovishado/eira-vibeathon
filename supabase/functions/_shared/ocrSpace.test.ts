@@ -90,6 +90,26 @@ describe('OCR.space con respuestas grabadas', () => {
     expect(l.dudosos).toEqual([])
   })
 
+  it('hoja mixta: completa con el texto lo que la posición no encontró', () => {
+    const mixta = structuredClone(hoja1Columnas)
+    const lineas = mixta.ParsedResults[0].TextOverlay.Lines
+    // "Peso (kg)" y su valor en el mismo renglón, a la derecha: solo lo ve el texto.
+    const i = lineas.findIndex(
+      (l: { Words: { WordText: string }[] }) => l.Words[0].WordText === '68.5',
+    )
+    lineas.splice(i, 1)
+    mixta.ParsedResults[0].ParsedText += '\n\nPeso (kg) 68.5'
+    const l = analizarRespuestaOcrSpace(
+      mixta,
+      CAMPOS_LECTURA,
+      'ocr',
+      TITULOS_HOJA,
+    )
+    expect(l.valores['paciente.apellidoMaterno']).toBe('Cruz')
+    expect(l.valores['consulta.signosVitales.pesoKg']).toBe('68.5')
+    expect(l.dudosos).toEqual([])
+  })
+
   it('hoja 2: lo vacío o ilegible queda dudoso y el año de dos dígitos también', () => {
     const l = analizarRespuestaOcrSpace(hoja2, CAMPOS_LECTURA, 'ocr')
     expect(l.valores).toMatchObject({

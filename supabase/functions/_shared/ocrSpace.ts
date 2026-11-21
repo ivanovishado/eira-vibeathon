@@ -226,7 +226,8 @@ export function analizarRespuestaOcrSpace(
     )
   // El texto plano sirve si viene en orden etiqueta → valor; si la hoja salió en
   // renglones de varias etiquetas, la posición de cada fragmento dice qué es de quién.
-  // Gana la lectura que encuentra más valores.
+  // Gana la lectura que encuentra más valores; lo que solo encontró la otra (una hoja
+  // con partes en columnas y partes en línea) se completa con ella.
   const porTexto = analizarTextoHoja(textoHoja, campos, modelo, titulos)
   const fragmentos = fragmentosDe(r)
   const porPosicion = fragmentos.length
@@ -237,12 +238,19 @@ export function analizarRespuestaOcrSpace(
         titulos,
       )
     : undefined
-  const lectura =
+  const [lectura, otra] =
     porPosicion &&
     Object.keys(porPosicion.valores).length >
       Object.keys(porTexto.valores).length
-      ? porPosicion
-      : porTexto
+      ? [porPosicion, porTexto]
+      : [porTexto, porPosicion]
+  if (otra)
+    for (const [id, valor] of Object.entries(otra.valores))
+      if (!(id in lectura.valores)) {
+        lectura.valores[id] = valor
+        if (!otra.dudosos.includes(id))
+          lectura.dudosos = lectura.dudosos.filter((d) => d !== id)
+      }
   if (
     lectura.dudosos.length === campos.length &&
     !Object.keys(lectura.valores).length
