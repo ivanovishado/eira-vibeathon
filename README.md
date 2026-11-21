@@ -35,11 +35,18 @@ En **Ajustes** se pueden cargar 2,000 pacientes ficticias para desarrollo y demo
 - `src/lib/normalize.ts`: normalización de nombres y teléfonos para búsqueda.
 - `src/pages/`: pantallas. `src/components/`: piezas compartidas.
 
+## Contexto de operación
+
+- Las brigadas duran alrededor de 4 días y el personal médico tiene internet antes de salir. La descarga de expedientes se hace antes de la brigada; durante ella no se cuenta con red.
+- Una paciente puede tardar unos 6 meses en volver a ver a personal de EIRA. Al volver interesa registrar lo ocurrido en ese lapso: consultas con otros especialistas (por ejemplo nutrición), antecedentes de cáncer y otros antecedentes.
+
 ## Fases
 
 0. Base del proyecto (hecha).
-1. Pacientes y búsqueda por nombre o celular.
-2. Expediente y captura de consulta.
-3. Sincronización con Supabase.
-4. Lectura de hojas en papel con revisión humana.
-5. PIN, respaldo y demo.
+1. Pacientes y búsqueda por nombre o celular (hecha).
+2. Expediente y captura de consulta (hecha).
+3. Cuenta del médico y sincronización con Supabase: inicio de sesión, envío de la cola de salida y descarga en segundo plano sin bloquear el uso.
+4. Preparación de brigada: aviso para abrir la app y descargar los datos antes de salir, con estado visible de la última descarga.
+5. Historial entre visitas: antecedentes (personales y familiares, incluido cáncer) y atención recibida fuera de EIRA desde la última consulta.
+6. Lectura de hojas en papel con revisión humana.
+7. PIN, respaldo y demo.
