@@ -66,8 +66,12 @@ export function DesdeUltimaVisita({
       (e) => e.tipo !== 'consulta' || antesDeConsulta(e.fecha),
     ),
   )
-  const externasDesdeUltima = resumen.externasDesdeUltima.filter((a) =>
-    antesDeConsulta(a.fecha),
+  const externasDesdeUltima = resumen.externasDesdeUltima.filter(
+    (a) =>
+      !fechaConsulta ||
+      (a.fechaAproximada
+        ? a.fecha.slice(0, 7) <= fechaConsulta.slice(0, 7)
+        : a.fecha <= fechaConsulta),
   )
   const ultima = resumen.ultimaConsulta?.consulta
   const meses =

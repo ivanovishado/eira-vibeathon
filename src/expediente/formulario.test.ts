@@ -172,5 +172,12 @@ describe('formulario de consulta', () => {
     expect(
       validarCaptura({ ...c, valores: { ...c.valores, fecha: '2026-06-01' } }),
     ).toEqual({})
+    const aprox = nuevaFila({
+      tipo: 'consulta',
+      fecha: '2026-05-15',
+      fechaAproximada: 'si',
+      resumen: 'Nutrición',
+    })
+    expect(validarCaptura({ ...c, externas: [aprox] })).toEqual({})
   })
 })

@@ -6,7 +6,12 @@ import type {
   TipoEstudio,
 } from '../db/schema'
 import { TIPOS_ESTUDIO } from '../db/schema'
-import { esValores, validarRegistro, type Valores } from './camposRegistro'
+import {
+  esValores,
+  MARCADA,
+  validarRegistro,
+  type Valores,
+} from './camposRegistro'
 import { hoyLocal } from './fechas'
 import { REGISTROS, type ClaseRegistro } from './registros'
 
@@ -249,7 +254,12 @@ export function validarCaptura(c: CapturaConsulta): Errores {
   if (/^\d{4}-\d{2}-\d{2}$/.test(fechaConsulta))
     for (const fila of c[FILAS_CAPTURA.externa] ?? []) {
       const clave = `externa.${fila.clave}.fecha` as const
-      if (!errores[clave] && (fila.valores.fecha ?? '') > fechaConsulta)
+      // Con fecha aproximada el día es supuesto: se compara solo el mes.
+      const n = fila.valores.fechaAproximada === MARCADA ? 7 : 10
+      if (
+        !errores[clave] &&
+        (fila.valores.fecha ?? '').slice(0, n) > fechaConsulta.slice(0, n)
+      )
         errores[clave] = 'No puede ser posterior a la fecha de la consulta.'
     }
   return errores
