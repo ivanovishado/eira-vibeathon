@@ -26,18 +26,19 @@ create trigger marcar_cambio before insert or update on public.hojas
 
 -- Una hoja confirmada ya generó una consulta: un dispositivo atrasado no puede
 -- regresarla a otro estado (por ejemplo, al terminar tarde una lectura) ni ligarla a
--- otra consulta. Se conserva la primera confirmación y el cambio se marca para que
--- el dispositivo atrasado la reciba; solo se permite llenar la ruta de la foto.
+-- otra consulta ni borrar su lectura. Se conserva la fila tal cual y el cambio se
+-- marca para que el dispositivo atrasado la reciba; solo se puede llenar la ruta de la foto.
 create function public.conservar_hoja_confirmada() returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  ruta text;
 begin
   if old.estado = 'confirmada' then
-    new.estado := old.estado;
-    new.paciente_id := old.paciente_id;
-    new.consulta_id := old.consulta_id;
-    new.ruta_imagen := coalesce(old.ruta_imagen, new.ruta_imagen);
+    ruta := coalesce(old.ruta_imagen, new.ruta_imagen);
+    new := old;
+    new.ruta_imagen := ruta;
   end if;
   return new;
 end;
